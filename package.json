@@ -1,22 +1,32 @@
 {
   "name": "project-stats",
-  "publisher": "zubariel",
   "displayName": "project-stats",
   "description": "Show project statistics in sidebar",
   "version": "0.0.1",
+  "icon": "images/Statify.png",
   "engines": {
     "vscode": "^1.110.0"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "stats",
+    "analytics",
+    "code",
+    "dashboard",
+    "project",
+    "insights"
+  ],
   "main": "./out/extension.js",
   "activationEvents": [
-    "onCommand:project-stats.openDashboard"
+    "onCommand:statify.openDashboard"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "project-stats.openDashboard",
-        "title": "Open Project Stats Dashboard"
+        "command": "statify.openDashboard",
+        "title": "Open Statify Dashboard"
       }
     ]
   },

@@ -1,52 +1,78 @@
-# Project Stats — VSCode Extension
+# Statify
 
-**Project Stats** gives you a complete overview of your project right inside VSCode. See code statistics, daily activity, Git commits, and more — all in one dashboard.
-
----
-
-## Features
-
-- **Project Overview**
-  - Total files, lines of code, and TODO/FIXME items
-  - Biggest files and folder distribution
-- **Code Insights**
-  - Lines per language with GitHub-style language bars
-  - Top code files by size
-- **Activity Tracking**
-  - Most edited files in the last 30 days
-  - Daily save streaks
-  - Git commit streaks
-  - Dual heatmap for file saves and commits
-- **Git Integration**
-  - Detect repository and branch
-  - Last commit info and weekly commits
-- **Dependency Overview**
-  - Node.js (`package.json`), Python (`requirements.txt`), Java (`pom.xml`), Rust (`Cargo.toml`)
-- **Quick File Access**
-  - Click any file in the dashboard to open it in VSCode
-- **Instant Refresh**
-  - Update statistics anytime without closing the panel
+**Statify** is a VS Code extension that provides real-time insights into your project. It analyzes your codebase and displays detailed statistics, activity tracking, and Git data, all inside a single dashboard.
 
 ---
 
-## Installation
+## ✨ Features
 
-1. Open VSCode.
-2. Go to the **Extensions** panel.
-3. Search for `Project Stats` and install.
-4. Open your project folder, then use the **command palette** (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run `Open Project Stats Dashboard`.
+### 📊 Code Insights
+- Lines of code per language  
+- Language usage breakdown with visual bars  
+- Detection of TODO / FIXME comments  
+- Largest files in your project  
+- Top files ranked by size  
+
+### ⚡ Activity Tracking
+- Most edited files (last 30 days)  
+- File save streaks  
+- Git commit streaks  
+- Activity heatmap (file saves + commits over time)  
+
+### 🔗 Git Integration
+- Repository and branch detection  
+- Latest commit details  
+- Weekly and yearly commit activity  
+
+### 🧩 Project Analysis
+- Dependency detection for:
+  - Node.js (`package.json`)
+  - Python (`requirements.txt`)
+  - Java (`pom.xml`)
+  - Rust (`Cargo.toml`)  
+- Media file detection and size tracking  
+
+### 🚀 Dashboard
+- Interactive webview dashboard  
+- Click any file to open it instantly in VS Code  
+- Refresh statistics at any time  
 
 ---
 
-## Usage
+## 📦 Installation
 
-- Open your project folder.
-- Launch the dashboard using the command palette.
-- Click files to open them, explore code stats, activity streaks, and dependencies.
-- Refresh anytime with the refresh button.
+1. Open **VS Code**
+2. Go to the **Extensions** panel
+3. Search for `Statify`
+4. Click **Install**
 
 ---
 
-## License
+## 🚀 Usage
 
-© 2026 Project Stats. All rights reserved. 
+1. Open your project folder in VS Code  
+2. Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)  
+3. Run:
+```Open Statify Dashboard```
+4. Explore your project insights in the Statify dashboard  
+
+---
+
+## ⚙️ Configuration
+
+Statify works out of the box with no setup required.  
+It automatically scans your workspace when opened.
+
+---
+
+## ⚠️ Notes
+
+- Some features depend on project structure and available files  
+- Git-related features require a Git repository  
+- Statistics are based on detected file changes and scans  
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
