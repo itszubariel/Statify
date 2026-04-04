@@ -3,7 +3,7 @@
   "displayName": "Statify",
    "publisher": "zubariel",
   "description": "Show project statistics in sidebar",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "icon": "images/Statify.png",
   "engines": {
     "vscode": "^1.110.0"
