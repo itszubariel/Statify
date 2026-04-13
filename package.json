@@ -20,14 +20,31 @@
     "insights"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onCommand:statify.openDashboard"
-  ],
+  "activationEvents": [],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "statify",
+          "title": "Statify",
+          "icon": "images/statify-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "statify": [
+        {
+          "id": "statifyView",
+          "name": "Statify",
+          "type": "webview"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "statify.openDashboard",
-        "title": "Open Statify Dashboard"
+        "title": "Open Statify Dashboard",
+        "icon": "images/Statify.png"
       }
     ]
   },

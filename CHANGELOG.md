@@ -5,7 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.2] — Project Health, Git Intelligence & Theme System
+## [1.3.0] — Activity Bar, Theme Overhaul & Language Icons
+
+### Added
+
+- **Activity bar icon** — Statify now has a dedicated icon in the VS Code sidebar rail (next to Explorer, Source Control, etc.), opening a persistent sidebar panel
+- **Sidebar panel** — shows a live mini-dashboard: code file count, total lines, TODO count, media files, total project size, top 5 language bars, and top folders by file count; refreshes on every file save
+- **25 new themes** — theme system expanded from 10 to 25 built-in themes across four groups:
+  - *Gruvbox Dark* — Hard, Medium, Soft
+  - *Gruvbox Light* — Hard, Medium, Soft
+  - *Popular* — Nord, Catppuccin Mocha, Catppuccin Latte, Catppuccin Macchiato, Tokyo Night, Tokyo Night Storm, Dracula, One Dark Pro, Solarized Dark, Solarized Light, Monokai Pro, Material Ocean
+  - *Extras* — Rosé Pine, Rosé Pine Moon, Everforest Dark, Kanagawa, Ayu Dark, Nightfox, Oxocarbon
+- **Theme preview screenshots** — PNG previews for all 25 themes added to `src/previews/`, named by theme ID
+- **Per-theme source files** — every theme now lives in its own file under `src/themes/` (e.g. `dracula.ts`, `kanagawa.ts`); adding a new theme is a single file drop + one import line in `index.ts`
+- **File type icons in language breakdown** — each language row now shows a colored badge icon (TypeScript blue, Python blue, Rust red, etc.); niche languages like Zig, Gleam, WGSL, Prisma, Nix, Elixir, and others all have icons; unknown extensions get an auto-generated fallback badge
+- **Theme preview repositioned** — the live preview card in the settings panel is now a sticky left column alongside the theme list instead of below it
+
+### Changed
+
+- **Universal language detection** — all non-media files are now counted by extension regardless of whether they pass the UTF-8 text heuristic; niche and binary-adjacent formats (`.wasm`, `.wgsl`, `.gleam`, etc.) now appear in the language breakdown
+- **Folder breakdown** — now uses file count as the bar width basis (previously line count), so folders with binary or non-text files always show up correctly
+
+---
+
+## [1.2.0] — Project Health, Git Intelligence & Theme System
 
 ### Added
 
@@ -32,7 +55,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.1] — Rebrand & Stability
+## [1.1.0] — Rebrand & Stability
 
 ### Changed
 
@@ -46,7 +69,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.0] — Initial Release
+## [1.0.0] — Initial Release
 
 First release of Statify. Ships a complete project analytics dashboard inside VS Code with no configuration required.
 

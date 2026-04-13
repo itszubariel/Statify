@@ -15,14 +15,24 @@ Statify gives you a real-time analytics dashboard for your project — lines of 
 
 ## Features
 
+### Activity Bar & Sidebar
+Statify lives in the VS Code sidebar rail — click the icon to open a persistent mini-dashboard showing:
+- Code file count, total lines, TODO count, media files, and total project size
+- Top 5 language breakdown with proportional bars
+- Top folders by file count
+- **Open Dashboard** button to launch the full panel
+
+All stats refresh automatically on every file save.
+
 ### Code Insights
 Track what your codebase is actually made of.
-- Lines of code broken down by language with visual percentage bars
-- Folder breakdown, top 8 folders by line count
+- Lines of code broken down by language with visual percentage bars and file type icons
+- Folder breakdown, top 8 folders by file count
 - TODO / FIXME detection grouped by file
 - Largest files ranked by size
 - Binary and media file detection with total size tracking
 - Expandable language list, top 5 shown, rest collapsible
+- Universal language detection — every file extension is counted, including niche formats like `.gleam`, `.zig`, `.wgsl`, `.nix`, `.prisma`, and more
 
 ### Activity Tracking
 See how you work, not just what you built.
@@ -76,13 +86,16 @@ Watch your project evolve over time.
 - Growth chart with historical trend line (Chart.js)
 
 ### Themes
-Ten built-in themes, switchable from the settings panel — no restart required.
+25 built-in themes across four groups, switchable from the settings panel — no restart required. The live preview card sits alongside the theme list so you can see colors before applying.
+
+Preview screenshots for every theme are available in [`src/previews/`](src/previews/).
 
 | Group | Themes |
 |---|---|
 | Gruvbox Dark | Hard · Medium · Soft |
 | Gruvbox Light | Hard · Medium · Soft |
-| Other | Nord · Catppuccin Mocha · Tokyo Night · Dracula |
+| Popular | Nord · Catppuccin Mocha · Catppuccin Latte · Catppuccin Macchiato · Tokyo Night · Tokyo Night Storm · Dracula · One Dark Pro · Solarized Dark · Solarized Light · Monokai Pro · Material Ocean |
+| Extras | Rosé Pine · Rosé Pine Moon · Everforest Dark · Kanagawa · Ayu Dark · Nightfox · Oxocarbon |
 
 Open **Settings** (gear icon), pick a theme, preview it live, and hit **Apply**.
 
@@ -119,11 +132,11 @@ code --install-extension statify-*.vsix
 ## Usage
 
 1. Open a project folder in VS Code
-2. Open the command palette: `Ctrl+Shift+P` / `Cmd+Shift+P`
-3. Run: `Open Statify Dashboard`
-4. The dashboard opens in a new editor panel
+2. Click the **Statify icon** in the activity bar (sidebar rail) for a quick stats overview
+3. Hit **Open Dashboard** from the sidebar, or open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run `Open Statify Dashboard`
+4. The full dashboard opens in a new editor panel
 
-From there: click any file to jump straight to it, use the search bar to filter file lists, hit **Refresh** to re-scan, switch themes from the gear icon, or just leave it open, it updates automatically on file changes.
+From there: click any file to jump straight to it, use the search bar to filter file lists, hit **Refresh** to re-scan, switch themes from the gear icon, or just leave it open — it updates automatically on file changes.
 
 ---
 

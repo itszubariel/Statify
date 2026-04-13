@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
+import { THEMES, ThemeDef, ThemeVars, getTheme, themeToCss } from './themes/index';
 
 const panels = new Map<string, vscode.WebviewPanel>();
 
@@ -78,37 +79,112 @@ interface Growth {
     snapshotCount: number;
 }
 
-interface ThemeVars {
-    bg0Hard: string; bg0: string; bg1: string; bg2: string;
-    bg3: string; bg4: string; fg0: string; fg1: string;
-    fg2: string; fg3: string; fg4: string;
-    red: string; green: string; yellow: string;
-    blue: string; purple: string; aqua: string; orange: string;
-}
-
-interface ThemeDef { id: string; label: string; group: string; vars: ThemeVars; }
 
 
-const THEMES: ThemeDef[] = [
-    { id: 'gruvbox-dark-hard', label: 'Gruvbox Dark Hard', group: 'Gruvbox Dark', vars: { bg0Hard: '#1d2021', bg0: '#282828', bg1: '#3c3836', bg2: '#504945', bg3: '#665c54', bg4: '#7c6f64', fg0: '#fbf1c7', fg1: '#ebdbb2', fg2: '#d5c4a1', fg3: '#bdae93', fg4: '#a89984', red: '#fb4934', green: '#b8bb26', yellow: '#fabd2f', blue: '#83a598', purple: '#d3869b', aqua: '#8ec07c', orange: '#fe8019' } },
-    { id: 'gruvbox-dark-medium', label: 'Gruvbox Dark Medium', group: 'Gruvbox Dark', vars: { bg0Hard: '#282828', bg0: '#282828', bg1: '#3c3836', bg2: '#504945', bg3: '#665c54', bg4: '#7c6f64', fg0: '#fbf1c7', fg1: '#ebdbb2', fg2: '#d5c4a1', fg3: '#bdae93', fg4: '#a89984', red: '#fb4934', green: '#b8bb26', yellow: '#fabd2f', blue: '#83a598', purple: '#d3869b', aqua: '#8ec07c', orange: '#fe8019' } },
-    { id: 'gruvbox-dark-soft', label: 'Gruvbox Dark Soft', group: 'Gruvbox Dark', vars: { bg0Hard: '#32302f', bg0: '#32302f', bg1: '#3c3836', bg2: '#504945', bg3: '#665c54', bg4: '#7c6f64', fg0: '#fbf1c7', fg1: '#ebdbb2', fg2: '#d5c4a1', fg3: '#bdae93', fg4: '#a89984', red: '#fb4934', green: '#b8bb26', yellow: '#fabd2f', blue: '#83a598', purple: '#d3869b', aqua: '#8ec07c', orange: '#fe8019' } },
-    { id: 'gruvbox-light-hard', label: 'Gruvbox Light Hard', group: 'Gruvbox Light', vars: { bg0Hard: '#f9f5d7', bg0: '#fbf1c7', bg1: '#ebdbb2', bg2: '#d5c4a1', bg3: '#bdae93', bg4: '#a89984', fg0: '#282828', fg1: '#3c3836', fg2: '#504945', fg3: '#665c54', fg4: '#7c6f64', red: '#9d0006', green: '#79740e', yellow: '#b57614', blue: '#076678', purple: '#8f3f71', aqua: '#427b58', orange: '#af3a03' } },
-    { id: 'gruvbox-light-medium', label: 'Gruvbox Light Medium', group: 'Gruvbox Light', vars: { bg0Hard: '#fbf1c7', bg0: '#fbf1c7', bg1: '#ebdbb2', bg2: '#d5c4a1', bg3: '#bdae93', bg4: '#a89984', fg0: '#282828', fg1: '#3c3836', fg2: '#504945', fg3: '#665c54', fg4: '#7c6f64', red: '#9d0006', green: '#79740e', yellow: '#b57614', blue: '#076678', purple: '#8f3f71', aqua: '#427b58', orange: '#af3a03' } },
-    { id: 'gruvbox-light-soft', label: 'Gruvbox Light Soft', group: 'Gruvbox Light', vars: { bg0Hard: '#f2e5bc', bg0: '#f2e5bc', bg1: '#ebdbb2', bg2: '#d5c4a1', bg3: '#bdae93', bg4: '#a89984', fg0: '#282828', fg1: '#3c3836', fg2: '#504945', fg3: '#665c54', fg4: '#7c6f64', red: '#9d0006', green: '#79740e', yellow: '#b57614', blue: '#076678', purple: '#8f3f71', aqua: '#427b58', orange: '#af3a03' } },
-    { id: 'nord', label: 'Nord', group: 'Other', vars: { bg0Hard: '#242831', bg0: '#2e3440', bg1: '#3b4252', bg2: '#434c5e', bg3: '#4c566a', bg4: '#616e88', fg0: '#eceff4', fg1: '#e5e9f0', fg2: '#d8dee9', fg3: '#b0bec9', fg4: '#8090a0', red: '#bf616a', green: '#a3be8c', yellow: '#ebcb8b', blue: '#81a1c1', purple: '#b48ead', aqua: '#88c0d0', orange: '#d08770' } },
-    { id: 'catppuccin-mocha', label: 'Catppuccin Mocha', group: 'Other', vars: { bg0Hard: '#11111b', bg0: '#1e1e2e', bg1: '#181825', bg2: '#313244', bg3: '#45475a', bg4: '#585b70', fg0: '#cdd6f4', fg1: '#bac2de', fg2: '#a6adc8', fg3: '#9399b2', fg4: '#7f849c', red: '#f38ba8', green: '#a6e3a1', yellow: '#f9e2af', blue: '#89b4fa', purple: '#cba6f7', aqua: '#94e2d5', orange: '#fab387' } },
-    { id: 'tokyo-night', label: 'Tokyo Night', group: 'Other', vars: { bg0Hard: '#16161e', bg0: '#1a1b26', bg1: '#24283b', bg2: '#292e42', bg3: '#3b4261', bg4: '#545c7e', fg0: '#c0caf5', fg1: '#a9b1d6', fg2: '#9aa5ce', fg3: '#7982a9', fg4: '#565f89', red: '#f7768e', green: '#9ece6a', yellow: '#e0af68', blue: '#7aa2f7', purple: '#bb9af7', aqua: '#7dcfff', orange: '#ff9e64' } },
-    { id: 'dracula', label: 'Dracula', group: 'Other', vars: { bg0Hard: '#191a21', bg0: '#282a36', bg1: '#343746', bg2: '#3d4052', bg3: '#44475a', bg4: '#6272a4', fg0: '#f8f8f2', fg1: '#e8e8e2', fg2: '#d0d0c8', fg3: '#b0b0a8', fg4: '#8888a0', red: '#ff5555', green: '#50fa7b', yellow: '#f1fa8c', blue: '#6272a4', purple: '#bd93f9', aqua: '#8be9fd', orange: '#ffb86c' } },
-];
+class StatifyViewProvider implements vscode.WebviewViewProvider {
+    private _view?: vscode.WebviewView;
 
-function getTheme(id: string): ThemeDef { return THEMES.find(t => t.id === id) || THEMES[0]; }
+    constructor(private readonly context: vscode.ExtensionContext) {}
 
-function themeToCss(v: ThemeVars): string {
-    return `:root{--bg0-hard:${v.bg0Hard};--bg0:${v.bg0};--bg1:${v.bg1};--bg2:${v.bg2};--bg3:${v.bg3};--bg4:${v.bg4};--fg0:${v.fg0};--fg1:${v.fg1};--fg2:${v.fg2};--fg3:${v.fg3};--fg4:${v.fg4};--red:${v.red};--green:${v.green};--yellow:${v.yellow};--blue:${v.blue};--purple:${v.purple};--aqua:${v.aqua};--orange:${v.orange}}`;
+    resolveWebviewView(view: vscode.WebviewView) {
+        this._view = view;
+        view.webview.options = { enableScripts: true };
+        this._render(view);
+        view.webview.onDidReceiveMessage(msg => {
+            if (msg.command === 'openDashboard') {
+                vscode.commands.executeCommand('statify.openDashboard');
+            }
+        });
+        // Refresh stats when files change
+        const watcher = vscode.workspace.onDidSaveTextDocument(() => this._render(view));
+        view.onDidDispose(() => watcher.dispose());
+    }
+
+    private async _render(view: vscode.WebviewView) {
+        const folders = vscode.workspace.workspaceFolders;
+        let statsHtml = '<div class="no-ws">Open a folder to see stats</div>';
+        if (folders?.length) {
+            try {
+                const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**');
+                const mediaExts = new Set(['png','jpg','jpeg','gif','mp4','mov','avi','webm','mp3','wav','ogg','bmp','ico','webp','svg','flv','mkv','flac','aac','m4a']);
+                let codeFiles = 0, mediaFiles = 0, totalLines = 0, todos = 0, totalSize = 0;
+                const langCount: Record<string, number> = {};
+                const folderCount: Record<string, number> = {};
+                for (const f of files) {
+                    const ext = path.extname(f.fsPath).replace('.','').toLowerCase() || 'other';
+                    const rel = vscode.workspace.asRelativePath(f.fsPath);
+                    const folder = rel.includes('/') ? rel.split('/')[0] : '(root)';
+                    let s: import('fs').Stats;
+                    try { s = fs.statSync(f.fsPath); } catch { continue; }
+                    if (!s.isFile()) continue;
+                    totalSize += s.size;
+                    if (mediaExts.has(ext)) { mediaFiles++; continue; }
+                    codeFiles++;
+                    langCount[ext] = (langCount[ext] || 0) + 1;
+                    folderCount[folder] = (folderCount[folder] || 0) + 1;
+                    try {
+                        const content = fs.readFileSync(f.fsPath, 'utf-8');
+                        const lines = content.split('\n');
+                        totalLines += lines.length;
+                        todos += lines.filter((l: string) => /TODO|FIXME/.test(l)).length;
+                    } catch { /* binary */ }
+                }
+                const topLangs = Object.entries(langCount).sort((a,b) => b[1]-a[1]).slice(0,5);
+                const topFolders = Object.entries(folderCount).sort((a,b) => b[1]-a[1]).slice(0,4);
+                const sizeMb = (totalSize / (1024*1024)).toFixed(1);
+                const langBars = topLangs.map(([lang, count]) => {
+                    const pct = ((count / codeFiles) * 100).toFixed(0);
+                    return `<div class="mini-bar-row"><span class="mini-lang">${lang.toUpperCase()}</span><div class="mini-track"><div class="mini-fill" style="width:${pct}%"></div></div><span class="mini-pct">${pct}%</span></div>`;
+                }).join('');
+                const folderRows = topFolders.map(([folder, count]) =>
+                    `<div class="stat-row"><span class="stat-label">${folder}</span><span class="stat-val">${count}f</span></div>`
+                ).join('');
+                statsHtml = `
+                <div class="section-title">Overview</div>
+                <div class="stat-row"><span class="stat-label">Code Files</span><span class="stat-val">${codeFiles.toLocaleString()}</span></div>
+                <div class="stat-row"><span class="stat-label">Lines</span><span class="stat-val green">${totalLines.toLocaleString()}</span></div>
+                <div class="stat-row"><span class="stat-label">TODOs</span><span class="stat-val orange">${todos}</span></div>
+                <div class="stat-row"><span class="stat-label">Media Files</span><span class="stat-val purple">${mediaFiles}</span></div>
+                <div class="stat-row"><span class="stat-label">Total Size</span><span class="stat-val">${sizeMb} MB</span></div>
+                ${topLangs.length ? `<div class="section-title" style="margin-top:12px">Languages</div>${langBars}` : ''}
+                ${topFolders.length ? `<div class="section-title" style="margin-top:12px">Top Folders</div>${folderRows}` : ''}`;
+            } catch { /* ignore */ }
+        }
+        view.webview.html = `<!DOCTYPE html><html><head><style>
+            *{margin:0;padding:0;box-sizing:border-box}
+            body{font-family:'JetBrains Mono',monospace;padding:12px;background:transparent;color:var(--vscode-foreground);font-size:12px}
+            .open-btn{width:100%;padding:9px;background:#fabd2f;border:none;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#282828;margin-bottom:14px;transition:opacity 0.2s;display:block}
+            .open-btn:hover{opacity:0.85}
+            .section-title{font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;color:var(--vscode-descriptionForeground);margin-bottom:6px;margin-top:4px}
+            .stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--vscode-widget-border,#444)}
+            .stat-row:last-child{border-bottom:none}
+            .stat-label{font-size:0.65rem;color:var(--vscode-descriptionForeground)}
+            .stat-val{font-size:0.75rem;font-weight:700}
+            .stat-val.green{color:#b8bb26}.stat-val.orange{color:#fe8019}.stat-val.purple{color:#d3869b}
+            .mini-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+            .mini-lang{font-size:0.6rem;width:36px;flex-shrink:0;color:var(--vscode-descriptionForeground)}
+            .mini-track{flex:1;height:4px;background:var(--vscode-widget-border,#444);border-radius:2px;overflow:hidden}
+            .mini-fill{height:100%;background:#83a598;border-radius:2px}
+            .mini-pct{font-size:0.6rem;width:28px;text-align:right;color:var(--vscode-descriptionForeground)}
+            .no-ws{font-size:0.7rem;color:var(--vscode-descriptionForeground);text-align:center;padding:12px 0}
+        </style></head><body>
+            <button class="open-btn" onclick="openDash()">⬡ Open Dashboard</button>
+            ${statsHtml}
+            <script>
+                const api = acquireVsCodeApi();
+                function openDash() { api.postMessage({ command: 'openDashboard' }); }
+            </script>
+        </body></html>`;
+    }
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+    // Sidebar activity bar view
+    const provider = new StatifyViewProvider(context);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('statifyView', provider)
+    );
+
     const dashboardCmd = vscode.commands.registerCommand('statify.openDashboard', async () => {
         const folders = vscode.workspace.workspaceFolders;
         if (!folders?.length) { vscode.window.showWarningMessage('Open a folder first!'); return; }
@@ -312,27 +388,31 @@ async function gatherStats(root: string): Promise<ProjectStats> {
             mediaStats.totalSize += s.size;
             mediaStats.files.push({ path: relPath, size: s.size });
             if (!mediaStats.biggest || s.size > mediaStats.biggest.size) mediaStats.biggest = { path: relPath, size: s.size };
-        } else if (isTextFile(file.fsPath)) {
-            let content = '';
-            try { content = fs.readFileSync(file.fsPath, 'utf-8'); } catch { continue; }
-
-            const lines = content.split('\n');
-            codeStats.totalLines += lines.length;
-
-            const todoLines: number[] = [];
-            lines.forEach((l, i) => { if (/TODO|FIXME/.test(l)) todoLines.push(i); });
-            if (todoLines.length) codeStats.todos.push({ file: relPath, count: todoLines.length, lines: todoLines });
-
+        } else {
+            // Always count the file for language stats regardless of content
             codeStats.languages[ext] = (codeStats.languages[ext] || 0) + 1;
-            codeStats.langLines[ext] = (codeStats.langLines[ext] || 0) + lines.length;
             codeStats.folders[folder] = (codeStats.folders[folder] || 0) + 1;
-            codeStats.folderLines[folder] = (codeStats.folderLines[folder] || 0) + lines.length;
 
             if (!codeStats.biggest || s.size > codeStats.biggest.size) codeStats.biggest = { path: relPath, size: s.size };
 
             const ageDays = (Date.now() - s.mtimeMs) / 86400000;
             if (ageDays > 180) staleFiles.push({ path: relPath, daysSince: Math.round(ageDays), size: s.size });
             if (ageDays <= 30) recentFiles.push({ path: relPath, mtime: s.mtimeMs });
+
+            // Only read content for text files (line counting, TODOs)
+            if (isTextFile(file.fsPath)) {
+                let content = '';
+                try { content = fs.readFileSync(file.fsPath, 'utf-8'); } catch { continue; }
+
+                const lines = content.split('\n');
+                codeStats.totalLines += lines.length;
+                codeStats.langLines[ext] = (codeStats.langLines[ext] || 0) + lines.length;
+                codeStats.folderLines[folder] = (codeStats.folderLines[folder] || 0) + lines.length;
+
+                const todoLines: number[] = [];
+                lines.forEach((l, i) => { if (/TODO|FIXME/.test(l)) todoLines.push(i); });
+                if (todoLines.length) codeStats.todos.push({ file: relPath, count: todoLines.length, lines: todoLines });
+            }
         }
     }
 
@@ -476,6 +556,57 @@ function getWebviewContent(stats: ProjectStats, root: string, growth: Growth, th
     })).sort((a, b) => b.lines - a.lines);
 
     const langColors: Record<string, string> = { 'ts': '#83a598', 'tsx': '#83a598', 'js': '#fabd2f', 'jsx': '#fabd2f', 'py': '#b8bb26', 'java': '#d79921', 'c': '#a89984', 'cpp': '#fb4934', 'cs': '#8ec07c', 'html': '#fe8019', 'css': '#d3869b', 'scss': '#d3869b', 'json': '#bdae93', 'md': '#83a598', 'go': '#8ec07c', 'rs': '#fe8019', 'rb': '#fb4934', 'php': '#d3869b', 'swift': '#fabd2f', 'kt': '#fe8019', 'other': '#928374' };
+
+    // SVG icons keyed by extension
+    const langIcons: Record<string, string> = {
+        'ts':    `<svg viewBox="0 0 24 24" fill="#3178c6"><rect width="24" height="24" rx="3" fill="#3178c6"/><path d="M3 3h18v18H3z" fill="none"/><path d="M13.5 13.5v1.25c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25V13.5M10 10h4M12 10v6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
+        'tsx':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#3178c6"/><path d="M13.5 13.5v1.25c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25V13.5M10 10h4M12 10v6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
+        'js':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#f7df1e"/><path d="M14 16.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V11M9 11v3.5c0 1.38-1 2.5-2.5 2.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
+        'jsx':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#f7df1e"/><path d="M14 16.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V11M9 11v3.5c0 1.38-1 2.5-2.5 2.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
+        'py':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#3572A5"/><path d="M8 8h4a2 2 0 0 1 2 2v1H8a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2zm0 0V6m8 10H12a2 2 0 0 1-2-2v-1h4a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2zm0 0v2" stroke="#fff" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>`,
+        'rs':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ce422b"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Rs</text></svg>`,
+        'go':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#00add8"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Go</text></svg>`,
+        'java':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#b07219"/><text x="4" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Jv</text></svg>`,
+        'kt':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#7F52FF"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Kt</text></svg>`,
+        'cs':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#178600"/><text x="4" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">C#</text></svg>`,
+        'cpp':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#f34b7d"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">C++</text></svg>`,
+        'c':     `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#555555"/><text x="7" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">C</text></svg>`,
+        'html':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#e34c26"/><text x="3" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">HTML</text></svg>`,
+        'css':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#563d7c"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">CSS</text></svg>`,
+        'scss':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#c6538c"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">SCSS</text></svg>`,
+        'json':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#292929"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#cbcb41" font-family="monospace">JSON</text></svg>`,
+        'md':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#083fa1"/><text x="4" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">MD</text></svg>`,
+        'php':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#4F5D95"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">PHP</text></svg>`,
+        'rb':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#701516"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Rb</text></svg>`,
+        'swift': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#F05138"/><text x="3" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">Swift</text></svg>`,
+        'vue':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#41b883"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Vue</text></svg>`,
+        'svelte':`<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ff3e00"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">Svlt</text></svg>`,
+        'lua':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#000080"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Lua</text></svg>`,
+        'zig':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ec915c"/><text x="4" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">Zig</text></svg>`,
+        'nix':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#5277c3"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Nix</text></svg>`,
+        'sh':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#89e051"/><text x="5" y="17" font-size="12" font-weight="bold" fill="#000" font-family="monospace">sh</text></svg>`,
+        'yaml':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#cb171e"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">YAML</text></svg>`,
+        'toml':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#9c4221"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">TOML</text></svg>`,
+        'xml':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#0060ac"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">XML</text></svg>`,
+        'sql':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#e38c00"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">SQL</text></svg>`,
+        'dart':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#00b4ab"/><text x="3" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">Dart</text></svg>`,
+        'r':     `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#198ce7"/><text x="7" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">R</text></svg>`,
+        'ex':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#6e4a7e"/><text x="5" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">Ex</text></svg>`,
+        'exs':   `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#6e4a7e"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Exs</text></svg>`,
+        'gleam': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ffaff3"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#1a1a2e" font-family="monospace">Glm</text></svg>`,
+        'wgsl':  `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#005a9c"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">WGSL</text></svg>`,
+        'prisma':`<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#0c344b"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">Prm</text></svg>`,
+        'tf':    `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#5c4ee5"/><text x="5" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">TF</text></svg>`,
+        'proto': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#4285f4"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">PB</text></svg>`,
+    };
+
+    function getLangIcon(lang: string): string {
+        if (langIcons[lang]) return langIcons[lang];
+        // Generic fallback with first 2 chars
+        const label = lang.slice(0, 2).toUpperCase();
+        const color = getLangColor(lang);
+        return `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="${color}"/><text x="${label.length === 1 ? 8 : 4}" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">${label}</text></svg>`;
+    }
     function getLangColor(lang: string): string {
         const accents = ['#fabd2f', '#b8bb26', '#83a598', '#fe8019', '#d3869b', '#8ec07c', '#fb4934'];
         let hash = 0; for (let i = 0; i < lang.length; i++) hash = lang.charCodeAt(i) + ((hash << 5) - hash);
@@ -486,20 +617,23 @@ function getWebviewContent(stats: ProjectStats, root: string, growth: Growth, th
     const otherLangs = langStats.slice(5);
     function langBarHTML(l: { lang: string; lines: number; percent: number }): string {
         const color = langColors[l.lang] || getLangColor(l.lang);
-        return `<div class="lang-item"><div class="lang-info"><span class="lang-dot" style="background:${color}"></span><span class="lang-name">${l.lang.toUpperCase()}</span><span class="lang-lines">${l.lines.toLocaleString()} lines</span><span class="lang-percent">${l.percent.toFixed(1)}%</span></div><div class="lang-bar-track"><div class="lang-bar" style="width:${l.percent}%;background:${color}"></div></div></div>`;
+        const icon = getLangIcon(l.lang);
+        return `<div class="lang-item"><div class="lang-info"><span class="lang-icon">${icon}</span><span class="lang-name">${l.lang.toUpperCase()}</span><span class="lang-lines">${l.lines.toLocaleString()} lines</span><span class="lang-percent">${l.percent.toFixed(1)}%</span></div><div class="lang-bar-track"><div class="lang-bar" style="width:${l.percent}%;background:${color}"></div></div></div>`;
     }
     const langBarsHTML = topLangs.map(langBarHTML).join('') + (otherLangs.length ? `<div id="more-langs" style="display:none;">${otherLangs.map(langBarHTML).join('')}</div><button onclick="toggleLanguages()" id="lang-toggle" class="toggle-btn">＋ Show ${otherLangs.length} more languages</button>` : '');
 
-    // Folder breakdown — top 8 by lines, bar chart style
-    const folderEntries = Object.entries(codeStats.folderLines)
-        .map(([folder, lines]) => ({ folder, lines: lines as number, files: codeStats.folders[folder] || 0 }))
-        .sort((a, b) => b.lines - a.lines).slice(0, 8);
-    const maxFolderLines = folderEntries[0]?.lines || 1;
-    const folderBarsHTML = folderEntries.map((f, i) => {
+    // Folder breakdown — bar chart
+    const folderEntries = Object.entries(codeStats.folders)
+        .map(([folder, files]) => ({ folder, files: files as number, lines: codeStats.folderLines[folder] || 0 }))
+        .filter(f => f.files > 0)
+        .sort((a, b) => b.files - a.files).slice(0, 8);
+    const maxFolderFiles = folderEntries[0]?.files || 1;
+    const folderBarsHTML = folderEntries.length ? folderEntries.map((f, i) => {
         const colors = ['var(--blue)', 'var(--green)', 'var(--yellow)', 'var(--purple)', 'var(--aqua)', 'var(--orange)', 'var(--red)', 'var(--fg4)'];
-        const pct = (f.lines / maxFolderLines) * 100;
-        return `<div class="folder-item"><div class="folder-info"><span class="folder-name">${f.folder === '.' ? '(root)' : f.folder}</span><span class="folder-meta">${f.lines.toLocaleString()} lines · ${f.files} files</span></div><div class="lang-bar-track"><div class="lang-bar" style="width:${pct}%;background:${colors[i % colors.length]}"></div></div></div>`;
-    }).join('') || '<div class="empty-state">No folder data</div>';
+        const pct = (f.files / maxFolderFiles) * 100;
+        const name = f.folder === '.' ? '(root)' : f.folder;
+        return `<div class="folder-item"><div class="folder-info"><span class="folder-name">${name}</span><span class="folder-meta">${f.lines.toLocaleString()} lines · ${f.files} files</span></div><div class="lang-bar-track"><div class="lang-bar" style="width:${pct}%;background:${colors[i % colors.length]}"></div></div></div>`;
+    }).join('') : '<div class="empty-state">No folder data</div>';
 
     const saveStreaks = calcStreaks(dailySaves);
     const commitStreaks = calcStreaks(commitActivityData);
@@ -637,10 +771,17 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 .streak-label{font-size:0.65rem;color:var(--fg4);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-top:3px}
 .lang-item,.folder-item{margin-bottom:12px}
 .lang-info,.folder-info{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-family:'JetBrains Mono',monospace;font-size:0.75rem}
+.lang-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.lang-icon svg{width:18px;height:18px;border-radius:3px}
 .lang-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 .lang-name,.folder-name{flex:1;font-weight:600;color:var(--fg2)}
 .folder-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
 .folder-meta{font-family:'JetBrains Mono',monospace;font-size:0.63rem;color:var(--fg4)}
+.treemap{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.treemap-cell{min-width:60px;min-height:56px;border-radius:6px;padding:8px;cursor:default;transition:filter 0.15s;display:flex;flex-direction:column;justify-content:space-between}
+.treemap-cell:hover{filter:brightness(1.2)}
+.treemap-label{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.treemap-meta{font-family:'JetBrains Mono',monospace;font-size:0.6rem;opacity:0.7;margin-top:4px}
 .lang-lines{color:var(--fg4);font-size:0.65rem}
 .lang-percent{color:var(--fg3);min-width:38px;text-align:right}
 .lang-bar-track{height:5px;background:var(--bg1);border-radius:3px;overflow:hidden}
@@ -704,6 +845,9 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 .settings-close:hover{color:var(--fg1);background:var(--bg2)}
 .settings-body{flex:1;overflow-y:auto;padding:20px}
 .settings-section-title{font-family:'JetBrains Mono',monospace;font-size:0.65rem;font-weight:600;color:var(--fg4);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px}
+.settings-layout{display:flex;gap:14px;align-items:flex-start}
+.theme-list-col{flex:1;min-width:0}
+.preview-col{width:160px;flex-shrink:0;position:sticky;top:0}
 .theme-group-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--bg4);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px}
 .theme-group{display:flex;flex-direction:column;gap:6px}
 .theme-item{padding:10px 12px;border-radius:6px;border:1px solid var(--bg2);cursor:pointer;transition:all 0.15s ease;background:var(--bg1)}
@@ -717,14 +861,13 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 .apply-btn:hover{opacity:0.85}.apply-btn:disabled{opacity:0.4;cursor:not-allowed}
 .cancel-btn{padding:10px 16px;background:var(--bg1);border:1px solid var(--bg3);color:var(--fg3);border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.8rem;transition:all 0.2s}
 .cancel-btn:hover{background:var(--bg2);color:var(--fg1)}
-.preview-section{margin-top:20px;border-top:1px solid var(--bg2);padding-top:16px}
 .preview-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--bg4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.preview-card{border-radius:8px;padding:14px;border:1px solid}
+.preview-card{border-radius:8px;padding:12px;border:1px solid}
 .preview-card-title{font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;opacity:0.6}
-.preview-stat-row{display:flex;gap:12px;margin-bottom:10px}
-.preview-stat{flex:1}
+.preview-stat-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.preview-stat{flex:1;min-width:40px}
 .preview-stat-label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;opacity:0.5;margin-bottom:3px;text-transform:uppercase}
-.preview-stat-value{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700}
+.preview-stat-value{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700}
 .preview-bar-track{height:4px;border-radius:2px;overflow:hidden;margin-bottom:5px}
 .preview-bar{height:100%;border-radius:2px}
 .preview-bar-label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;opacity:0.5;display:flex;justify-content:space-between}
@@ -745,10 +888,14 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
     </div>
     <div class="settings-body">
         <div class="settings-section-title">Theme</div>
-        ${themePickerHTML}
-        <div class="preview-section">
-            <div class="preview-label">Preview</div>
-            <div id="themePreview"></div>
+        <div class="settings-layout">
+            <div class="preview-col">
+                <div class="preview-label">Preview</div>
+                <div id="themePreview"></div>
+            </div>
+            <div class="theme-list-col">
+                ${themePickerHTML}
+            </div>
         </div>
     </div>
     <div class="settings-footer">

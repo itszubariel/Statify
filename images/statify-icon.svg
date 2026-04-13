@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
+  <!-- S: spans y=5 to y=19, left half x=2..13 -->
+  <path d="M13 5H6.5C5.12 5 4 6.12 4 7.5S5.12 10 6.5 10h5C12.88 10 14 11.12 14 12.5v1C14 15.43 12.43 17 10.5 17H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- /: same vertical span y=5 to y=19, right side -->
+  <line x1="20" y1="5" x2="16" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>
