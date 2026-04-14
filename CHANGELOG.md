@@ -4,6 +4,13 @@ All notable changes to Statify are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [1.3.1] — Bug Fixes & Layout Polish
+
+### Fixed
+
+- **Grid layout inconsistency** — cards that had no data were being removed from the DOM entirely, breaking the CSS grid and leaving awkward empty columns; all cards now always render and show a friendly empty state message instead (e.g. "No git repository found", "No stale files — nice!")
+- **Responsive layout collapse** — at narrow panel widths, `.grid` and `.grid-2` containers collapsed at different breakpoints causing misaligned rows; all grid containers now collapse consistently together
+- **Git stderr noise** — git commands were missing `stdio: 'pipe'` on some `execSync` calls, causing git error output (e.g. "Not a git repository") to leak into the VS Code debug console
 
 ## [1.3.0] — Activity Bar, Theme Overhaul & Language Icons
 

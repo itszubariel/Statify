@@ -430,17 +430,17 @@ async function gatherStats(root: string): Promise<ProjectStats> {
     try {
         cp.execSync('git rev-parse --git-dir', { cwd: root, stdio: 'pipe' });
         gitInfo.isRepo = true;
-        gitInfo.branch = cp.execSync('git rev-parse --abbrev-ref HEAD', { cwd: root }).toString().trim();
+        gitInfo.branch = cp.execSync('git rev-parse --abbrev-ref HEAD', { cwd: root, stdio: 'pipe' }).toString().trim();
         gitInfo.lastCommit = {
-            message: cp.execSync('git log -1 --pretty=format:%s', { cwd: root }).toString().trim(),
-            time: cp.execSync('git log -1 --pretty=format:%ar', { cwd: root }).toString().trim()
+            message: cp.execSync('git log -1 --pretty=format:%s', { cwd: root, stdio: 'pipe' }).toString().trim(),
+            time: cp.execSync('git log -1 --pretty=format:%ar', { cwd: root, stdio: 'pipe' }).toString().trim()
         };
         const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-        gitInfo.commitsThisWeek = parseInt(cp.execSync(`git rev-list --count --since="${weekAgo.toISOString().split('T')[0]}" HEAD`, { cwd: root }).toString().trim(), 10) || 0;
+        gitInfo.commitsThisWeek = parseInt(cp.execSync(`git rev-list --count --since="${weekAgo.toISOString().split('T')[0]}" HEAD`, { cwd: root, stdio: 'pipe' }).toString().trim(), 10) || 0;
 
         // Commit activity heatmap
         const commitCounts: Record<string, number> = {};
-        cp.execSync('git log --since="1 year ago" --pretty=format:%ad --date=format:%Y-%m-%d', { cwd: root })
+        cp.execSync('git log --since="1 year ago" --pretty=format:%ad --date=format:%Y-%m-%d', { cwd: root, stdio: 'pipe' })
             .toString().split('\n').filter(l => l.trim())
             .forEach(date => { commitCounts[date] = (commitCounts[date] || 0) + 1; });
         commitActivityData = Object.entries(commitCounts)
@@ -448,7 +448,7 @@ async function gatherStats(root: string): Promise<ProjectStats> {
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         // Top contributors
-        const contribRaw = cp.execSync('git shortlog -sn --no-merges -100', { cwd: root }).toString().trim();
+        const contribRaw = cp.execSync('git shortlog -sn --no-merges -100', { cwd: root, stdio: 'pipe' }).toString().trim();
         gitInfo.contributors = contribRaw.split('\n')
             .filter(l => l.trim())
             .slice(0, 8)
@@ -459,7 +459,7 @@ async function gatherStats(root: string): Promise<ProjectStats> {
             .filter((c): c is Contributor => c !== null);
 
         // Most changed files (capped at 500 commits for perf)
-        const changedRaw = cp.execSync('git log --name-only --pretty=format: -500', { cwd: root }).toString();
+        const changedRaw = cp.execSync('git log --name-only --pretty=format: -500', { cwd: root, stdio: 'pipe' }).toString();
         const fileCounts: Record<string, number> = {};
         changedRaw.split('\n').filter(l => l.trim()).forEach(f => { fileCounts[f] = (fileCounts[f] || 0) + 1; });
         gitInfo.mostChangedFiles = Object.entries(fileCounts)
@@ -754,7 +754,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .grid-full{margin-bottom:14px}
-.card{background:var(--bg0);border:1px solid var(--bg2);border-radius:8px;padding:18px 20px;transition:border-color 0.2s ease,transform 0.15s ease,background 0.3s;position:relative;overflow:hidden}
+.card{background:var(--bg0);border:1px solid var(--bg2);border-radius:8px;padding:18px 20px;transition:border-color 0.2s ease,transform 0.15s ease,background 0.3s;position:relative;overflow:hidden;min-width:0}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:transparent}
 .card:hover{border-color:var(--bg3);transform:translateY(-1px)}
 .card.accent-yellow::before{background:var(--yellow)}.card.accent-green::before{background:var(--green)}.card.accent-blue::before{background:var(--blue)}.card.accent-purple::before{background:var(--purple)}.card.accent-orange::before{background:var(--orange)}.card.accent-aqua::before{background:var(--aqua)}.card.accent-red::before{background:var(--red)}
@@ -872,8 +872,8 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 .preview-bar{height:100%;border-radius:2px}
 .preview-bar-label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;opacity:0.5;display:flex;justify-content:space-between}
 ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--bg2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--bg3)}
-@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.grid,.grid-2{grid-template-columns:1fr}.settings-panel{width:100%}}
+@media(max-width:900px){.grid,.grid-2{grid-template-columns:1fr 1fr}.grid>.card:last-child:nth-child(odd),.grid-2>.card:last-child:nth-child(odd){grid-column:1 / -1}}
+@media(max-width:600px){.grid,.grid-2{grid-template-columns:1fr}.grid>.card:last-child:nth-child(odd),.grid-2>.card:last-child:nth-child(odd){grid-column:unset}.settings-panel{width:100%}}
 </style>
 </head>
 <body>
@@ -1048,33 +1048,32 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
         <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Stale Files <span style="font-size:0.6rem;color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0">&nbsp;· untouched 6+ months</span></div>
         <div class="list-container">${staleFilesHTML}</div>
     </div>
-    ${gitInfo.isRepo ? `
     <div class="card accent-aqua">
         <div class="card-title"><span class="card-title-dot" style="background:var(--aqua)"></span>Top Contributors</div>
-        <div class="list-container">${contributorsHTML}</div>
+        <div class="list-container">${gitInfo.isRepo ? contributorsHTML : '<div class="empty-state">No git repository found</div>'}</div>
     </div>
     <div class="card accent-red">
         <div class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>Most Changed Files</div>
         <div class="list-container" id="changedList">
-            ${changedFilesHTML}
+            ${gitInfo.isRepo ? changedFilesHTML : '<div class="empty-state">No git repository found</div>'}
             <div class="no-results" id="changedEmpty">No matches</div>
         </div>
-    </div>` : ''}
+    </div>
 </div>
 
 <div class="grid">
-    ${gitInfo.isRepo ? `<div class="card accent-aqua">
+    <div class="card accent-aqua">
         <div class="card-title"><span class="card-title-dot" style="background:var(--aqua)"></span>Git Repository</div>
-        <div class="git-branch">⎇ ${gitInfo.branch}</div>
+        ${gitInfo.isRepo ? `<div class="git-branch">⎇ ${gitInfo.branch}</div>
         <div class="git-commit-msg">"${gitInfo.lastCommit.message}"</div>
         <div class="git-commit-time">${gitInfo.lastCommit.time}</div>
-        <div class="git-week"><span class="git-week-num">${gitInfo.commitsThisWeek}</span><span class="git-week-label">commits this week</span></div>
-    </div>` : ''}
-    ${dependencies.total > 0 ? `<div class="card accent-red">
+        <div class="git-week"><span class="git-week-num">${gitInfo.commitsThisWeek}</span><span class="git-week-label">commits this week</span></div>` : '<div class="empty-state">No git repository found</div>'}
+    </div>
+    <div class="card accent-red">
         <div class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>Dependencies</div>
-        <div style="margin-bottom:14px;"><div class="stat-label">Total</div><div class="stat-value red" style="font-size:1.6rem;">${dependencies.total}</div>${dependencies.dev > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--fg4);margin-top:4px;">${dependencies.dev} dev deps</div>` : ''}</div>
-        ${dependencies.sources.map(src => `<div class="dep-row"><span class="dep-name">${src.name}</span><span class="dep-count">${src.count}</span></div>`).join('')}
-    </div>` : ''}
+        ${dependencies.total > 0 ? `<div style="margin-bottom:14px;"><div class="stat-label">Total</div><div class="stat-value red" style="font-size:1.6rem;">${dependencies.total}</div>${dependencies.dev > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--fg4);margin-top:4px;">${dependencies.dev} dev deps</div>` : ''}</div>
+        ${dependencies.sources.map(src => `<div class="dep-row"><span class="dep-name">${src.name}</span><span class="dep-count">${src.count}</span></div>`).join('')}` : '<div class="empty-state">No dependencies found</div>'}
+    </div>
     <div class="card accent-orange">
         <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Performance</div>
         <div class="perf-row"><span class="perf-key">Scan time</span><span class="perf-val">${performance.scanTime}ms</span></div>

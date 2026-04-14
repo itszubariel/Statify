@@ -1,3 +1,4 @@
+# Ignore from .vsix
 .vscode/**
 .vscode-test/**
 src/**
