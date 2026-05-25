@@ -9,20 +9,22 @@
 
 > **Codebase intelligence, right inside VS Code.**
 
-Statify gives you a real-time analytics dashboard for your project — lines of code, language breakdowns, Git activity, health scores, theming, and more. No config. No cloud. Just open it and go.
+Statify gives you a real-time analytics dashboard for your project: lines of code, language breakdowns, Git activity, health scores, theming, and more. No config. No cloud. Just open it and go.
 
 ---
 
 ## Features
 
 ### Activity Bar & Sidebar
-Statify lives in the VS Code sidebar rail — click the icon to open a persistent mini-dashboard showing:
-- Code file count, total lines, TODO count, media files, and total project size
-- Top 5 language breakdown with proportional bars
-- Top folders by file count
-- **Open Dashboard** button to launch the full panel
+Statify lives in the VS Code sidebar rail: click the icon to open a native tree view with expandable sections:
+- **Overview**: code files, lines, TODOs, media files, total size
+- **Languages**: top 8 languages with file counts, percentages, and line counts
+- **Top Folders**: top 6 folders by file count with line counts
+- **Health**: score and grade with per-factor breakdowns
+- **Git**: branch, last commit, weekly commits, contributor count
+- **Open Dashboard**: clickable item to launch the full panel
 
-All stats refresh automatically on every file save.
+All stats refresh automatically on every file save. The tree view uses VS Code's native theming and supports collapsing/expanding sections.
 
 ### Code Insights
 Track what your codebase is actually made of.
@@ -32,7 +34,18 @@ Track what your codebase is actually made of.
 - Largest files ranked by size
 - Binary and media file detection with total size tracking
 - Expandable language list, top 5 shown, rest collapsible
-- Universal language detection — every file extension is counted, including niche formats like `.gleam`, `.zig`, `.wgsl`, `.nix`, `.prisma`, and more
+- Universal language detection: every file extension is counted, including niche formats like `.gleam`, `.zig`, `.wgsl`, `.nix`, `.prisma`, and more
+
+### File Complexity
+See the most structurally dense parts of your codebase.
+- Function and class counting via language-specific regex patterns for 15+ languages (JS/TS, Python, Java, Rust, Go, C/C++, C#, Ruby, PHP, Swift, Kotlin)
+- Long-line percentage tracking (>80 chars)
+- Top 10 most complex files ranked by total definitions, with function/class counts in the dashboard
+
+### Configurable Dashboard Cards
+Every card in the dashboard can be toggled on or off from the settings panel or VS Code settings (`statify.dashboardCards.*`).
+- 18 individual toggles cover all cards: Overview, Save Streak, Commit Streak, Health, Growth, Activity, Languages, Folders, Recently Edited, Largest Files, Media Assets, Stale Files, Contributors, Changed Files, Git, Dependencies, Performance, and Complexity
+- Toggle changes apply immediately and persist globally
 
 ### Activity Tracking
 See how you work, not just what you built.
@@ -86,7 +99,7 @@ Watch your project evolve over time.
 - Growth chart with historical trend line (Chart.js)
 
 ### Themes
-25 built-in themes across four groups, switchable from the settings panel — no restart required. The live preview card sits alongside the theme list so you can see colors before applying.
+25 built-in themes across four groups, switchable from the settings panel: no restart required. The live preview card sits alongside the theme list so you can see colors before applying.
 
 Preview screenshots for every theme are available in [`src/previews/`](src/previews/).
 
@@ -132,11 +145,11 @@ code --install-extension statify-*.vsix
 ## Usage
 
 1. Open a project folder in VS Code
-2. Click the **Statify icon** in the activity bar (sidebar rail) for a quick stats overview
-3. Hit **Open Dashboard** from the sidebar, or open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run `Open Statify Dashboard`
+2. Click the **Statify icon** in the activity bar (sidebar rail): the native tree view shows expandable sections with key stats at a glance
+3. Click **Open Dashboard** at the top of the tree, or open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run `Open Statify Dashboard`
 4. The full dashboard opens in a new editor panel
 
-From there: click any file to jump straight to it, use the search bar to filter file lists, hit **Refresh** to re-scan, switch themes from the gear icon, or just leave it open — it updates automatically on file changes.
+From there: click any file to jump straight to it, use the search bar to filter file lists, hit **Refresh** to re-scan, switch themes or toggle dashboard cards from the gear icon, or just leave it open: it updates automatically on file changes.
 
 ---
 
@@ -153,4 +166,4 @@ From there: click any file to jump straight to it, use the search bar to filter 
 
 ## License
 
-MIT — do whatever you want with it.
+MIT: do whatever you want with it.

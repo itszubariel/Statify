@@ -3,7 +3,7 @@
   "displayName": "Statify VSC",
    "publisher": "Statify",
   "description": "Show project statistics in sidebar",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "icon": "images/Statify.png",
   "engines": {
     "vscode": "^1.110.0"
@@ -22,6 +22,101 @@
   "main": "./out/extension.js",
   "activationEvents": [],
   "contributes": {
+    "configuration": {
+      "title": "Statify",
+      "properties": {
+        "statify.dashboardCards.showOverview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Overview card"
+        },
+        "statify.dashboardCards.showSaveStreak": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Save Streak card"
+        },
+        "statify.dashboardCards.showCommitStreak": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Commit Streak card"
+        },
+        "statify.dashboardCards.showHealth": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Project Health card"
+        },
+        "statify.dashboardCards.showGrowth": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Project Growth card"
+        },
+        "statify.dashboardCards.showActivity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Activity Heatmap card"
+        },
+        "statify.dashboardCards.showLanguages": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Languages card"
+        },
+        "statify.dashboardCards.showFolders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Folder Breakdown card"
+        },
+        "statify.dashboardCards.showRecentlyEdited": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Recently Edited card"
+        },
+        "statify.dashboardCards.showLargestFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Largest Files card"
+        },
+        "statify.dashboardCards.showMediaAssets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Media Assets card"
+        },
+        "statify.dashboardCards.showStaleFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Stale Files card"
+        },
+        "statify.dashboardCards.showContributors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Top Contributors card"
+        },
+        "statify.dashboardCards.showChangedFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Most Changed Files card"
+        },
+        "statify.dashboardCards.showGit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Git Repository card"
+        },
+        "statify.dashboardCards.showDependencies": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Dependencies card"
+        },
+        "statify.dashboardCards.showPerformance": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Performance card"
+        },
+        "statify.dashboardCards.showComplexity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Complexity card"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -34,9 +129,8 @@
     "views": {
       "statify": [
         {
-          "id": "statifyView",
-          "name": "Statify",
-          "type": "webview"
+          "id": "statifyTreeView",
+          "name": "Statify"
         }
       ]
     },
