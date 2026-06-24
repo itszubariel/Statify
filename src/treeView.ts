@@ -1,8 +1,5 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { scanFiles } from './scanner';
-import { getGitInfo } from './git';
-import { calcHealthScore } from './health';
+import { gatherStats, getScanConfig } from './stats';
 import type { ProjectStats } from './types';
 
 class StatifyTreeItem extends vscode.TreeItem {
@@ -43,29 +40,8 @@ export class StatifyTreeDataProvider implements vscode.TreeDataProvider<StatifyT
         const root = folders[0].uri.fsPath;
         this.rootPath = root;
 
-        const startTime = Date.now();
-        const scanned = await scanFiles(root);
-        const { gitInfo, commitActivityData } = getGitInfo(root);
-
-        const totalCodeFiles = Object.values(scanned.codeStats.languages).reduce((a, b) => a + b, 0);
-        const partial = {
-            codeStats: scanned.codeStats,
-            mediaStats: scanned.mediaStats,
-            complexity: scanned.complexity,
-            totalFiles: scanned.totalFiles,
-            codeTopFiles: scanned.codeTopFiles,
-            totalEdits: scanned.totalEdits,
-            lastModified: scanned.lastModified,
-            dailySaves: scanned.dailySaves,
-            mostEditedFiles: scanned.mostEditedFiles,
-            staleFiles: scanned.staleFiles,
-            gitInfo,
-            commitActivityData,
-            dependencies: { total: 0, dev: 0, sources: [] },
-            performance: { scanTime: Date.now() - startTime, filesScanned: scanned.totalFiles, lastRefresh: new Date().toLocaleTimeString() },
-        };
-        const health = calcHealthScore(partial, commitActivityData);
-        this.statsCache = { ...partial, health };
+        const scanConfig = getScanConfig();
+        this.statsCache = await gatherStats(root, scanConfig);
         return this.statsCache;
     }
 
