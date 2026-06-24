@@ -43,7 +43,7 @@ export function generateHeatmap(data: { date: string; count: number }[], weeks: 
     return html + '</div>';
 }
 
-export function calcGrowth(workspaceState: vscode.Memento, rootPath: string, stats: ProjectStats): Growth {
+export async function calcGrowth(workspaceState: vscode.Memento, rootPath: string, stats: ProjectStats): Promise<Growth> {
     const historyKey = `projectGrowth_${rootPath}`;
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
 
@@ -52,10 +52,20 @@ export function calcGrowth(workspaceState: vscode.Memento, rootPath: string, sta
 
     const now = Date.now();
     const totalCodeFiles = Object.values(stats.codeStats.languages).reduce((a, b) => a + b, 0);
-    snapshots.push({ timestamp: now, date: new Date().toISOString().split('T')[0], lines: stats.codeStats.totalLines, files: totalCodeFiles });
-    workspaceState.update(historyKey, snapshots);
 
-    const prev = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
+    const prev = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const existingIndex = snapshots.findIndex(s => s.date === todayStr);
+    const newSnapshot = { timestamp: now, date: todayStr, lines: stats.codeStats.totalLines, files: totalCodeFiles };
+
+    if (existingIndex !== -1) {
+        snapshots[existingIndex] = newSnapshot;
+    } else {
+        snapshots.push(newSnapshot);
+    }
+    await workspaceState.update(historyKey, snapshots);
+
     return {
         linesDelta: prev ? stats.codeStats.totalLines - prev.lines : 0,
         filesDelta: prev ? totalCodeFiles - prev.files : 0,
