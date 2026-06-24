@@ -4,6 +4,32 @@ All notable changes to Statify are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [1.4.0]: Codebase Cleaning, Stat Gathering Refactor & ESLint Hardening
+
+### Added
+
+- **`src/stats.ts`**: shared `gatherStats()`, `scanDependencies()`, and `getScanConfig()` extracted out of `extension.ts` and `treeView.ts` so both consume from a single source
+- **`src/languages.ts`**: language color maps, badge maps, and helper functions (`getLangColor`, `getLangBadge`, `getLangIcon`) extracted from the webview template into a dedicated typed module
+- **ESLint rules**: `@typescript-eslint/no-unused-vars`, `@typescript-eslint/no-floating-promises`, and `parserOptions.projectService` for type-aware linting
+
+### Changed
+
+- **Stats gathering deduplicated**: `extension.ts` and `treeView.ts` no longer maintain separate scan pipelines; both call into `stats.ts`'s `gatherStats()` which handles scanning, git info, dependencies, and health scoring in one place
+- **`themeToCss` refactored**: now uses `Object.entries` iteration instead of manually concatenating 18 CSS variable strings
+- **`escapeJson` hardened**: also escapes backslashes and single quotes now (previously only `</script>`)
+- **`calcGrowth` timeline fix**: previous snapshot is captured *before* the snapshots array is mutated, fixing `minutesAgo` display on sequential refreshes
+- **`workspaceState.update` now awaited**: was fire-and-forget before, could lose state under rapid calls
+- **File change listener debounced**: `onDidChangeTextDocument` now waits 500ms after the last keystroke before triggering a refresh, instead of firing on every character typed
+
+### Removed
+
+- **`recentFiles` from scan return**: the full list of recently-modified files was computed and returned but never consumed by the dashboard; removed from `scanFiles()` return type
+- **Unused `as number` casts**: removed from folder entry mapping in both `webview.ts` and `treeView.ts`
+- **Unused imports and variables**: cleaned up across `extension.ts`, `treeView.ts`, `webview.ts`, and `git.ts`
+- **Test suite removed**: all test files (`src/test/`) and their build config removed; test-related scripts (`compile:tests`, `pretest`, `test`) removed from `package.json`
+- **CI workflow removed**: `.github/workflows/ci.yml` removed alongside the test suite
+
+---
 ## [1.3.2]: Codebase Refactor, Native Tree View, Complexity & Configurable Cards
 
 ### Added
