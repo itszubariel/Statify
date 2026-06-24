@@ -4,11 +4,12 @@ import type { Growth, ProjectStats, Snapshot } from './types';
 export function calcStreaks(data: { date: string; count: number }[]): { current: number; longest: number } {
     if (!data.length) { return { current: 0, longest: 0 }; }
     const today = new Date(); today.setHours(0, 0, 0, 0);
+    const dateMap = new Map(data.map(s => [s.date, s.count]));
     let current = 0;
     const checkDate = new Date(today);
     for (let i = 0; i < 365; i++) {
         const ds = checkDate.toISOString().split('T')[0];
-        if (data.find(s => s.date === ds)) { current++; checkDate.setDate(checkDate.getDate() - 1); }
+        if (dateMap.has(ds)) { current++; checkDate.setDate(checkDate.getDate() - 1); }
         else { break; }
     }
     const dates = data.map(s => new Date(s.date).getTime()).sort((a, b) => b - a);
