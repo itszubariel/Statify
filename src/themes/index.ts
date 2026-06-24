@@ -1,16 +1,14 @@
+import * as vscode from 'vscode';
 import { ThemeDef, ThemeVars } from './types';
 
-// Gruvbox Dark
 import gruvboxDarkHard from './gruvbox-dark-hard';
 import gruvboxDarkMedium from './gruvbox-dark-medium';
 import gruvboxDarkSoft from './gruvbox-dark-soft';
 
-// Gruvbox Light
 import gruvboxLightHard from './gruvbox-light-hard';
 import gruvboxLightMedium from './gruvbox-light-medium';
 import gruvboxLightSoft from './gruvbox-light-soft';
 
-// Popular
 import nord from './nord';
 import catppuccinMocha from './catppuccin-mocha';
 import catppuccinLatte from './catppuccin-latte';
@@ -24,7 +22,6 @@ import solarizedLight from './solarized-light';
 import monokaiPro from './monokai-pro';
 import materialOcean from './material-ocean';
 
-// Extras
 import rosePine from './rose-pine';
 import rosePineMoon from './rose-pine-moon';
 import everforestDark from './everforest-dark';
@@ -35,7 +32,7 @@ import oxocarbon from './oxocarbon';
 
 export type { ThemeDef, ThemeVars };
 
-export const THEMES: ThemeDef[] = [
+const BUILTIN_THEMES: ThemeDef[] = [
     gruvboxDarkHard, gruvboxDarkMedium, gruvboxDarkSoft,
     gruvboxLightHard, gruvboxLightMedium, gruvboxLightSoft,
     nord, catppuccinMocha, catppuccinLatte, catppuccinMacchiato,
@@ -45,10 +42,38 @@ export const THEMES: ThemeDef[] = [
     ayuDark, nightfox, oxocarbon,
 ];
 
+function getCustomThemes(): ThemeDef[] {
+    try {
+        const cfg = vscode.workspace.getConfiguration('statify');
+        const custom = cfg.get<Array<{ id: string; label: string; vars: ThemeVars }>>('customThemes');
+        if (custom && Array.isArray(custom)) {
+            return custom.map(t => ({
+                id: t.id,
+                label: t.label || t.id,
+                group: 'Custom',
+                vars: t.vars,
+            }));
+        }
+    } catch (err) {
+        console.warn('[Statify] Failed to load custom themes:', err);
+    }
+    return [];
+}
+
+export function THEMES(): ThemeDef[] {
+    return [...BUILTIN_THEMES, ...getCustomThemes()];
+}
+
 export function getTheme(id: string): ThemeDef {
-    return THEMES.find(t => t.id === id) || THEMES[0];
+    return [...BUILTIN_THEMES, ...getCustomThemes()].find(t => t.id === id) || BUILTIN_THEMES[0];
 }
 
 export function themeToCss(v: ThemeVars): string {
-    return `:root{--bg0-hard:${v.bg0Hard};--bg0:${v.bg0};--bg1:${v.bg1};--bg2:${v.bg2};--bg3:${v.bg3};--bg4:${v.bg4};--fg0:${v.fg0};--fg1:${v.fg1};--fg2:${v.fg2};--fg3:${v.fg3};--fg4:${v.fg4};--red:${v.red};--green:${v.green};--yellow:${v.yellow};--blue:${v.blue};--purple:${v.purple};--aqua:${v.aqua};--orange:${v.orange}}`;
+    const cssVars = Object.entries(v)
+        .map(([key, val]) => {
+            const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+            return `--${cssKey}:${val}`;
+        })
+        .join(';');
+    return `:root{${cssVars}}`;
 }
