@@ -1,9 +1,9 @@
 {
   "name": "statify-vsc",
   "displayName": "Statify VSC",
-   "publisher": "Statify",
+  "publisher": "Statify",
   "description": "Show project statistics in sidebar",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "icon": "images/Statify.png",
   "engines": {
     "vscode": "^1.110.0"
@@ -20,11 +20,66 @@
     "insights"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:statifyTreeView",
+    "onCommand:statify.openDashboard"
+  ],
   "contributes": {
     "configuration": {
       "title": "Statify",
       "properties": {
+        "statify.scan.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/target/**",
+            "**/build/**",
+            "**/dist/**",
+            "**/.venv/**",
+            "**/venv/**",
+            "**/__pycache__/**",
+            "**/.next/**",
+            "**/.nuxt/**",
+            "**/vendor/**",
+            "**/bin/**",
+            "**/obj/**",
+            "**/.git/**",
+            "**/coverage/**",
+            "**/.terraform/**"
+          ],
+          "description": "Glob patterns to exclude from scanning"
+        },
+        "statify.scan.concurrency": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Number of files to scan in parallel"
+        },
+        "statify.scan.complexityConcurrency": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Number of files for complexity analysis in parallel"
+        },
+        "statify.scan.complexityFileLimit": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Maximum files to analyze for complexity"
+        },
+        "statify.scan.staleDays": {
+          "type": "number",
+          "default": 180,
+          "minimum": 30,
+          "maximum": 1825,
+          "description": "Days without modification before a file is considered stale"
+        },
         "statify.dashboardCards.showOverview": {
           "type": "boolean",
           "default": true,
@@ -114,6 +169,36 @@
           "type": "boolean",
           "default": true,
           "description": "Show Complexity card"
+        },
+        "statify.customThemes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "vars"],
+            "properties": {
+              "id": { "type": "string", "description": "Unique theme identifier" },
+              "label": { "type": "string", "description": "Display name for the theme" },
+              "vars": {
+                "type": "object",
+                "description": "Theme color variables",
+                "properties": {
+                  "bg0Hard": { "type": "string" }, "bg0": { "type": "string" },
+                  "bg1": { "type": "string" }, "bg2": { "type": "string" },
+                  "bg3": { "type": "string" }, "bg4": { "type": "string" },
+                  "fg0": { "type": "string" }, "fg1": { "type": "string" },
+                  "fg2": { "type": "string" }, "fg3": { "type": "string" },
+                  "fg4": { "type": "string" },
+                  "red": { "type": "string" }, "green": { "type": "string" },
+                  "yellow": { "type": "string" }, "blue": { "type": "string" },
+                  "purple": { "type": "string" }, "aqua": { "type": "string" },
+                  "orange": { "type": "string" }
+                },
+                "required": ["bg0Hard","bg0","bg1","bg2","bg3","bg4","fg0","fg1","fg2","fg3","fg4","red","green","yellow","blue","purple","aqua","orange"]
+              }
+            }
+          },
+          "default": [],
+          "description": "Custom user-defined themes"
         }
       }
     },
@@ -146,19 +231,21 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0"
   },
   "devDependencies": {
-    "@types/vscode": "^1.110.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "typescript-eslint": "^8.56.1",
-    "eslint": "^9.39.3",
-    "typescript": "^5.9.3",
+    "@types/vscode": "^1.110.0",
     "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.3",
+    "glob": "^10.3.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   },
   "license": "SEE LICENSE IN LICENSE",
   "repository": {

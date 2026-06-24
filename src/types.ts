@@ -92,6 +92,14 @@ export interface Growth {
     snapshotCount: number;
 }
 
+export interface ScanConfig {
+    excludePatterns: string[];
+    concurrency: number;
+    complexityConcurrency: number;
+    complexityFileLimit: number;
+    staleDays: number;
+}
+
 export interface DashboardConfig {
     showOverview: boolean;
     showSaveStreak: boolean;
@@ -112,3 +120,16 @@ export interface DashboardConfig {
     showPerformance: boolean;
     showComplexity: boolean;
 }
+
+export const DEFAULT_SCAN_CONFIG: ScanConfig = {
+    excludePatterns: [
+        '**/node_modules/**', '**/target/**', '**/build/**', '**/dist/**',
+        '**/.venv/**', '**/venv/**', '**/__pycache__/**', '**/.next/**',
+        '**/.nuxt/**', '**/vendor/**', '**/bin/**', '**/obj/**',
+        '**/.git/**', '**/coverage/**', '**/.terraform/**'
+    ],
+    concurrency: 50,
+    complexityConcurrency: 5,
+    complexityFileLimit: 25,
+    staleDays: 180,
+};
