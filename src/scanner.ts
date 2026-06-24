@@ -1,68 +1,179 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as fsPromises from 'fs/promises';
 import * as path from 'path';
-import type { CodeStats, ComplexityFile, ComplexityInfo, DailySave, FileItem, MediaStats, StaleFile, TodoItem } from './types';
+import type { CodeStats, ComplexityFile, ComplexityInfo, DailySave, FileItem, MediaStats, ScanConfig, StaleFile, TodoItem } from './types';
+import { DEFAULT_SCAN_CONFIG } from './types';
 
-export function isTextFile(filePath: string): boolean {
+export async function isTextFile(filePath: string): Promise<boolean> {
     try {
-        const stats = fs.statSync(filePath);
-        if (stats.size > 5 * 1024 * 1024) { return false; }
-        const rawBytes = fs.readFileSync(filePath);
-        if (rawBytes.length < 10) { return true; }
-        const sample = rawBytes.slice(0, Math.min(8192, rawBytes.length));
-        let valid = 0, control = 0;
-        for (let i = 0; i < sample.length; i++) {
-            const b = sample[i];
-            if (b === 0) { return false; }
-            if (b >= 32 && b <= 126) { valid++; }
-            if (b < 32 && b !== 9 && b !== 10 && b !== 13) { control++; }
+        const stats = await fsPromises.stat(filePath);
+        if (stats.size > 50 * 1024 * 1024) { return false; }
+
+        const fd = await fsPromises.open(filePath, 'r');
+        try {
+            const buffer = Buffer.alloc(8192);
+            const { bytesRead } = await fd.read(buffer, 0, 8192, 0);
+            if (bytesRead === 0) { return true; }
+
+            let control = 0;
+            for (let i = 0; i < bytesRead; i++) {
+                const b = buffer[i];
+                if (b === 0) { return false; }
+                if (b < 32 && b !== 9 && b !== 10 && b !== 13) {
+                    control++;
+                }
+            }
+            return (control / bytesRead) < 0.02;
+        } finally {
+            await fd.close();
         }
-        return (valid / sample.length) > 0.90 && (control / sample.length) < 0.10;
-    } catch { return false; }
+    } catch (err) {
+        console.error('[Statify] isTextFile error:', filePath, err);
+        return false;
+    }
 }
 
-const complexityPatterns: Record<string, { func: RegExp; cls: RegExp }> = {
-    ts: { func: /(?:^|\s)(?:function\s+\w+|(\w+)\s*=\s*(?:async\s*)?\(|(\w+)\s*\([^)]*\)\s*[:\{])/gm, cls: /(?:^|\s)(?:class|interface|type|abstract\s+class)\s+\w+/gm },
-    tsx: { func: /(?:^|\s)(?:function\s+\w+|(\w+)\s*=\s*(?:async\s*)?\(|(\w+)\s*\([^)]*\)\s*[:\{])/gm, cls: /(?:^|\s)(?:class|interface|type)\s+\w+/gm },
-    js: { func: /(?:^|\s)(?:function\s+\w+|(\w+)\s*=\s*(?:async\s*)?\(|(\w+)\s*\([^)]*\)\s*\{)/gm, cls: /(?:^|\s)class\s+\w+/gm },
-    jsx: { func: /(?:^|\s)(?:function\s+\w+|(\w+)\s*=\s*(?:async\s*)?\(|(\w+)\s*\([^)]*\)\s*\{)/gm, cls: /(?:^|\s)class\s+\w+/gm },
-    py: { func: /^[ \t]*(?:async\s+)?def\s+\w+/gm, cls: /^[ \t]*class\s+\w+/gm },
-    java: { func: /(?:public|private|protected)\s+\w+\s+\w+\s*\(/g, cls: /(?:class|interface|abstract\s+class)\s+\w+/g },
-    rs: { func: /(?:^|\s)(?:pub\s+)?fn\s+\w+/gm, cls: /(?:^|\s)(?:pub\s+)?(?:struct|enum|trait|impl)\s+\w+/gm },
-    go: { func: /^func\s+\w+/gm, cls: /^type\s+\w+\s+(?:struct|interface)/gm },
-    c: { func: /\w+\s+\w+\s*\([^)]*\)\s*\{/g, cls: /struct\s+\w+/g },
-    cpp: { func: /\w+\s+\w+\s*\([^)]*\)\s*(?:const\s*)?\{/g, cls: /class\s+\w+/g },
-    cs: { func: /(?:public|private|protected|internal)\s+(?:\w+\s+)*\w+\s*\(/g, cls: /class\s+\w+/g },
-    rb: { func: /^[ \t]*(?:def)\s+\w+/gm, cls: /^[ \t]*(?:class|module)\s+\w+/gm },
-    php: { func: /function\s+\w+/g, cls: /class\s+\w+/g },
-    swift: { func: /func\s+\w+/g, cls: /(?:class|struct|enum|protocol)\s+\w+/g },
-    kt: { func: /fun\s+\w+/g, cls: /(?:class|interface|object)\s+\w+/g },
-};
+const BINARY_EXTENSIONS = new Set([
+    'zip', 'tar', 'gz', 'rar', '7z', 'bz2', 'xz', 'exe', 'dll', 'so', 'dylib',
+    'bin', 'dat', 'db', 'sqlite', 'sqlite3', 'pdf', 'docx', 'xlsx', 'pptx',
+    'class', 'jar', 'war', 'ear', 'ttf', 'otf', 'woff', 'woff2', 'eot'
+]);
+const TEXT_EXTENSIONS = new Set([
+    'ts', 'tsx', 'js', 'jsx', 'py', 'java', 'rs', 'go', 'c', 'cpp', 'h', 'hpp',
+    'cs', 'rb', 'php', 'swift', 'kt', 'html', 'css', 'scss', 'json', 'md',
+    'yaml', 'yml', 'xml', 'sh', 'txt', 'toml', 'prisma', 'tf', 'proto', 'sql',
+    'dart', 'lua', 'zig', 'nix', 'ex', 'exs', 'gleam', 'wgsl', 'r', 'vue',
+    'svelte', 'astro', 'graphql', 'gql', 'dockerfile', 'makefile', 'cmake',
+    'gradle', 'mjs', 'cjs', 'mts', 'cts', 'scala', 'groovy', 'hs', 'ml',
+    'elm', 'clj', 'cljs', 'edn', 'coffee', 'litcoffee', 'nim', 'crystal',
+    'erl', 'hrl', 'ps1', 'bat', 'cmd', 'zsh', 'fish', 'bash', 'awk', 'sed',
+    'pl', 'pm', 't', 'pod', 'pas', 'dpr', 'lpr', 'ada', 'adb', 'asm', 's',
+    'S', 'f', 'f90', 'f95', 'f03', 'f08', 'for', 'm', 'mm', 'tex', 'sty',
+    'cls', 'bib', 'rst', 'org', 'wiki', 'ipynb', 'qmd', 'rmd',
+]);
 
-function analyzeComplexity(content: string, ext: string, relPath: string): ComplexityFile | null {
-    const patterns = complexityPatterns[ext];
-    if (!patterns) { return null; }
-
-    const funcs = content.match(patterns.func);
-    const classes = content.match(patterns.cls);
-
-    const lines = content.split('\n');
-    const longLines = lines.filter(l => l.length > 80).length;
-    const longLinePct = lines.length > 0 ? (longLines / lines.length) * 100 : 0;
-
-    const funcCount = funcs ? funcs.length : 0;
-    const classCount = classes ? classes.length : 0;
-
-    if (funcCount === 0 && classCount === 0) { return null; }
-
-    return { path: relPath, functions: funcCount, classes: classCount, longLinePct };
+async function countLines(filePath: string): Promise<{ total: number; todos: number[]; content?: string }> {
+    const stats = await fsPromises.stat(filePath);
+    if (stats.size === 0) {
+        return { total: 0, todos: [], content: '' };
+    }
+    if (stats.size < 2 * 1024 * 1024) {
+        const content = await fsPromises.readFile(filePath, 'utf-8');
+        const lines = content.split('\n');
+        const total = lines.length > 0 && lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+        const todoLines: number[] = [];
+        lines.forEach((l, i) => { if (i < total && /TODO|FIXME|HACK|XXX/.test(l)) { todoLines.push(i); } });
+        return { total, todos: todoLines, content };
+    } else {
+        return new Promise((resolve, reject) => {
+            let total = 0;
+            const stream = fs.createReadStream(filePath);
+            stream.on('data', (chunk: string | Buffer) => {
+                const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+                if (buf.length > 0 && buf[0] !== 10 && total === 0) { total = 1; }
+                for (let i = 0; i < buf.length; i++) {
+                    if (buf[i] === 10) { total++; }
+                }
+            });
+            stream.on('end', () => {
+                resolve({ total, todos: [] });
+            });
+            stream.on('error', err => reject(err));
+        });
+    }
 }
 
-export async function scanFiles(root: string): Promise<{
+function countSymbols(symbols: Array<vscode.DocumentSymbol | vscode.SymbolInformation>): { functions: number; classes: number } {
+    let functions = 0;
+    let classes = 0;
+
+    function visit(s: vscode.DocumentSymbol | vscode.SymbolInformation) {
+        if (s.kind === vscode.SymbolKind.Function || s.kind === vscode.SymbolKind.Method || s.kind === vscode.SymbolKind.Constructor) {
+            functions++;
+        } else if (s.kind === vscode.SymbolKind.Class || s.kind === vscode.SymbolKind.Interface || s.kind === vscode.SymbolKind.Struct) {
+            classes++;
+        }
+
+        if ('children' in s && Array.isArray(s.children)) {
+            for (const child of s.children) {
+                visit(child);
+            }
+        }
+    }
+
+    for (const symbol of symbols) {
+        visit(symbol);
+    }
+
+    return { functions, classes };
+}
+
+async function getComplexityInfo(uri: vscode.Uri, content: string | undefined): Promise<ComplexityFile | null> {
+    let functions = 0;
+    let classes = 0;
+
+    try {
+        const symbolsPromise = vscode.commands.executeCommand<Array<vscode.DocumentSymbol | vscode.SymbolInformation>>(
+            'vscode.executeDocumentSymbolProvider',
+            uri
+        );
+        const timeoutPromise = new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 800));
+        const symbols = await Promise.race([symbolsPromise, timeoutPromise]);
+        if (symbols && symbols.length > 0) {
+            const count = countSymbols(symbols);
+            functions = count.functions;
+            classes = count.classes;
+        }
+    } catch (err) {
+        console.log('[Statify] Symbol provider failed for:', uri.fsPath, err);
+    }
+
+    let longLinePct = 0;
+    if (content) {
+        const lines = content.split('\n');
+        const longLines = lines.filter(l => l.length > 80).length;
+        longLinePct = lines.length > 0 ? (longLines / lines.length) * 100 : 0;
+    }
+
+    if (functions === 0 && classes === 0) { return null; }
+    return { path: vscode.workspace.asRelativePath(uri.fsPath), functions, classes, longLinePct };
+}
+
+async function asyncPool<T, R>(limit: number, array: T[], iteratorFn: (item: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = new Array(array.length);
+    let index = 0;
+
+    async function worker() {
+        while (index < array.length) {
+            const currentIndex = index++;
+            results[currentIndex] = await iteratorFn(array[currentIndex]);
+        }
+    }
+
+    const workers = Array.from({ length: Math.min(limit, array.length) }, worker);
+    await Promise.all(workers);
+    return results;
+}
+
+interface FileScanResult {
+    uri: vscode.Uri;
+    path: string;
+    size: number;
+    ext: string;
+    folder: string;
+    mtime: number;
+    isMedia: boolean;
+    isText: boolean;
+    lines: number;
+    todos: TodoItem | null;
+    complexity: ComplexityFile | null;
+}
+
+export async function scanFiles(root: string, config?: Partial<ScanConfig>): Promise<{
     codeStats: CodeStats;
     mediaStats: MediaStats;
     complexity: ComplexityInfo;
-    recentFiles: Array<{ path: string; mtime: number }>;
     staleFiles: StaleFile[];
     codeTopFiles: FileItem[];
     mostEditedFiles: Array<{ path: string; lastModified: string }>;
@@ -71,60 +182,133 @@ export async function scanFiles(root: string): Promise<{
     lastModified: string;
     totalFiles: number;
 }> {
-    const files = await vscode.workspace.findFiles('**/*', '{**/node_modules/**,**/target/**,**/build/**,**/dist/**,**/.venv/**,**/venv/**,**/__pycache__/**,**/.next/**,**/.nuxt/**,**/vendor/**,**/bin/**,**/obj/**}');
+    const cfg: ScanConfig = { ...DEFAULT_SCAN_CONFIG, ...config };
+    const excludePattern = cfg.excludePatterns.length > 0 ? `{${cfg.excludePatterns.join(',')}}` : undefined;
+
+    console.log('[Statify] scanFiles: finding files in workspace...');
+    const files = await vscode.workspace.findFiles('**/*', excludePattern);
+    console.log(`[Statify] scanFiles: found ${files.length} files. Starting processing...`);
 
     const mediaExts = new Set(['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'avi', 'webm', 'mp3', 'wav', 'ogg', 'bmp', 'ico', 'webp', 'svg', 'flv', 'mkv', 'flac', 'aac', 'm4a']);
 
     const codeStats: CodeStats = { totalLines: 0, todos: [], biggest: null, languages: {}, langLines: {}, folders: {}, folderLines: {} };
     const mediaStats: MediaStats = { totalFiles: 0, totalSize: 0, biggest: null, files: [], topFiles: [] };
-    const recentFiles: Array<{ path: string; mtime: number }> = [];
     const staleFiles: StaleFile[] = [];
-    const sixMonthsMs = 180 * 24 * 60 * 60 * 1000;
     const complexityFiles: ComplexityFile[] = [];
-    let totalFuncs = 0, totalClasses = 0;
+    let totalFuncs = 0;
+    let totalClasses = 0;
 
-    for (const file of files) {
-        const relPath = vscode.workspace.asRelativePath(file.fsPath);
-        const ext = path.extname(file.fsPath).replace('.', '').toLowerCase() || 'other';
-        const folder = relPath.includes('/') ? relPath.split('/')[0] : '.';
+    async function processFile(file: vscode.Uri): Promise<FileScanResult | null> {
+        try {
+            const relPath = vscode.workspace.asRelativePath(file.fsPath);
+            const ext = path.extname(file.fsPath).replace('.', '').toLowerCase() || 'other';
+            const folder = relPath.includes('/') ? relPath.split('/')[0] : '.';
 
-        let s: fs.Stats;
-        try { s = fs.statSync(file.fsPath); } catch { continue; }
-        if (!s.isFile()) { continue; }
+            const s = await fsPromises.stat(file.fsPath);
+            if (!s.isFile()) { return null; }
 
-        if (mediaExts.has(ext)) {
+            const isMedia = mediaExts.has(ext);
+            if (isMedia) {
+                return {
+                    uri: file,
+                    path: relPath,
+                    size: s.size,
+                    ext,
+                    folder,
+                    mtime: s.mtimeMs,
+                    isMedia: true,
+                    isText: false,
+                    lines: 0,
+                    todos: null,
+                    complexity: null
+                };
+            }
+
+            let isText = false;
+            if (BINARY_EXTENSIONS.has(ext)) {
+                isText = false;
+            } else if (TEXT_EXTENSIONS.has(ext)) {
+                isText = true;
+            } else {
+                isText = await isTextFile(file.fsPath);
+            }
+
+            let lines = 0;
+            let todos: TodoItem | null = null;
+
+            if (isText) {
+                const lineRes = await countLines(file.fsPath);
+                lines = lineRes.total;
+                if (lineRes.todos.length > 0) {
+                    todos = { file: relPath, count: lineRes.todos.length, lines: lineRes.todos };
+                }
+            }
+
+            return {
+                uri: file,
+                path: relPath,
+                size: s.size,
+                ext,
+                folder,
+                mtime: s.mtimeMs,
+                isMedia: false,
+                isText,
+                lines,
+                todos,
+                complexity: null
+            };
+        } catch (err) {
+            console.error('[Statify] Error processing file:', file.fsPath, err);
+            return null;
+        }
+    }
+
+    const results = (await asyncPool(cfg.concurrency, files, processFile)).filter((r): r is FileScanResult => r !== null);
+    console.log(`[Statify] scanFiles: processed ${results.length} files successfully. Running complexity analysis...`);
+
+    const candidateResults = results
+        .filter(r => !r.isMedia && r.isText)
+        .sort((a, b) => b.size - a.size)
+        .slice(0, cfg.complexityFileLimit);
+
+    await asyncPool(cfg.complexityConcurrency, candidateResults, async (r) => {
+        try {
+            let content: string | undefined;
+            if (r.size < 2 * 1024 * 1024) {
+                content = await fsPromises.readFile(r.uri.fsPath, 'utf-8');
+            }
+            r.complexity = await getComplexityInfo(r.uri, content);
+        } catch (err) {
+            console.error('[Statify] Complexity analysis error:', r.path, err);
+        }
+    });
+    console.log('[Statify] scanFiles: complexity analysis completed');
+
+    for (const r of results) {
+        if (r.isMedia) {
             mediaStats.totalFiles++;
-            mediaStats.totalSize += s.size;
-            mediaStats.files.push({ path: relPath, size: s.size });
-            if (!mediaStats.biggest || s.size > mediaStats.biggest.size) { mediaStats.biggest = { path: relPath, size: s.size }; }
+            mediaStats.totalSize += r.size;
+            mediaStats.files.push({ path: r.path, size: r.size });
+            if (!mediaStats.biggest || r.size > mediaStats.biggest.size) { mediaStats.biggest = { path: r.path, size: r.size }; }
         } else {
-            codeStats.languages[ext] = (codeStats.languages[ext] || 0) + 1;
-            codeStats.folders[folder] = (codeStats.folders[folder] || 0) + 1;
+            codeStats.languages[r.ext] = (codeStats.languages[r.ext] || 0) + 1;
+            codeStats.folders[r.folder] = (codeStats.folders[r.folder] || 0) + 1;
 
-            if (!codeStats.biggest || s.size > codeStats.biggest.size) { codeStats.biggest = { path: relPath, size: s.size }; }
+            if (!codeStats.biggest || r.size > codeStats.biggest.size) { codeStats.biggest = { path: r.path, size: r.size }; }
 
-            const ageDays = (Date.now() - s.mtimeMs) / 86400000;
-            if (ageDays > 180) { staleFiles.push({ path: relPath, daysSince: Math.round(ageDays), size: s.size }); }
-            if (ageDays <= 30) { recentFiles.push({ path: relPath, mtime: s.mtimeMs }); }
+            const ageDays = (Date.now() - r.mtime) / 86400000;
+            if (ageDays > cfg.staleDays) { staleFiles.push({ path: r.path, daysSince: Math.round(ageDays), size: r.size }); }
+            if (r.isText) {
+                codeStats.totalLines += r.lines;
+                codeStats.langLines[r.ext] = (codeStats.langLines[r.ext] || 0) + r.lines;
+                codeStats.folderLines[r.folder] = (codeStats.folderLines[r.folder] || 0) + r.lines;
 
-            if (isTextFile(file.fsPath)) {
-                let content = '';
-                try { content = fs.readFileSync(file.fsPath, 'utf-8'); } catch { continue; }
+                if (r.todos) { codeStats.todos.push(r.todos); }
 
-                const lines = content.split('\n');
-                codeStats.totalLines += lines.length;
-                codeStats.langLines[ext] = (codeStats.langLines[ext] || 0) + lines.length;
-                codeStats.folderLines[folder] = (codeStats.folderLines[folder] || 0) + lines.length;
-
-                const todoLines: number[] = [];
-                lines.forEach((l, i) => { if (/TODO|FIXME/.test(l)) { todoLines.push(i); } });
-                if (todoLines.length) { codeStats.todos.push({ file: relPath, count: todoLines.length, lines: todoLines }); }
-
-                const cf = analyzeComplexity(content, ext, relPath);
-                if (cf) {
-                    totalFuncs += cf.functions;
-                    totalClasses += cf.classes;
-                    complexityFiles.push(cf);
+                if (r.complexity) {
+                    totalFuncs += r.complexity.functions;
+                    totalClasses += r.complexity.classes;
+                    complexityFiles.push(r.complexity);
                 }
             }
         }
@@ -140,14 +324,16 @@ export async function scanFiles(root: string): Promise<{
         topFiles: complexityFiles.sort((a, b) => (b.functions + b.classes) - (a.functions + a.classes)).slice(0, 10),
     };
 
-    const mostEditedFiles = recentFiles
+    const mostEditedFiles = results
+        .filter(r => !r.isMedia && r.isText)
         .sort((a, b) => b.mtime - a.mtime).slice(0, 10)
         .map(f => ({ path: f.path, lastModified: new Date(f.mtime).toLocaleDateString() }));
 
-    const codeTopFiles: FileItem[] = files
-        .filter(f => { try { return fs.statSync(f.fsPath).isFile() && isTextFile(f.fsPath); } catch { return false; } })
-        .map(f => ({ path: vscode.workspace.asRelativePath(f.fsPath), size: fs.statSync(f.fsPath).size }))
-        .sort((a, b) => b.size - a.size).slice(0, 10);
+    const codeTopFiles: FileItem[] = results
+        .filter(r => !r.isMedia && r.isText)
+        .map(r => ({ path: r.path, size: r.size }))
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 10);
 
     let dailySaves: DailySave[] = [];
     let totalEdits = 0;
@@ -156,21 +342,23 @@ export async function scanFiles(root: string): Promise<{
         const dateCounts: Record<string, number> = {};
         let mostRecentMtime = 0, mostRecentFile = '';
         const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
-        for (const file of files) {
-            let fstats: fs.Stats;
-            try { fstats = fs.statSync(file.fsPath); } catch { continue; }
-            if (!fstats.isFile() || !isTextFile(file.fsPath)) { continue; }
-            const mtime = fstats.mtimeMs;
+
+        for (const r of results) {
+            if (r.isMedia || !r.isText) { continue; }
+            const mtime = r.mtime;
             if (mtime < oneYearAgo) { continue; }
             totalEdits++;
             const dateStr = new Date(mtime).toISOString().split('T')[0];
             dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
-            if (mtime > mostRecentMtime) { mostRecentMtime = mtime; mostRecentFile = vscode.workspace.asRelativePath(file.fsPath); }
+            if (mtime > mostRecentMtime) { mostRecentMtime = mtime; mostRecentFile = r.path; }
         }
         lastModified = mostRecentFile ? `${mostRecentFile} (${new Date(mostRecentMtime).toLocaleDateString()})` : 'N/A';
         dailySaves = Object.entries(dateCounts).map(([date, count]) => ({ date, count: Number(count) })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    } catch { /* ignore */ }
+    } catch (err) {
+        console.error('[Statify] Error processing daily saves:', err);
+    }
 
+    console.log('[Statify] scanFiles completed successfully');
     return {
         codeStats,
         mediaStats,
@@ -182,6 +370,5 @@ export async function scanFiles(root: string): Promise<{
         dailySaves,
         mostEditedFiles,
         staleFiles: staleFiles.slice(0, 10),
-        recentFiles,
     };
 }
