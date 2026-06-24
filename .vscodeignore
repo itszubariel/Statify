@@ -1,6 +1,7 @@
 # Ignore from .vsix
 .vscode/**
 .vscode-test/**
+.github/**
 src/**
 .gitignore
 .yarnrc
@@ -10,3 +11,5 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+media/
+previews/
