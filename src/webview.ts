@@ -1,13 +1,17 @@
 import * as path from 'path';
 import type { DashboardConfig, ProjectStats, Growth } from './types';
-import { ThemeDef, THEMES, getTheme, themeToCss } from './themes/index';
+import { ThemeDef, THEMES, themeToCss } from './themes/index';
 import { calcStreaks, generateHeatmap } from './state';
+import { getLangColor, getLangIcon } from './languages';
 
 function escapeJson(data: unknown): string {
-    return JSON.stringify(data).replace(/<\/script>/gi, '<\\/script>');
+    return JSON.stringify(data)
+        .replace(/\\/g, '\\\\')
+        .replace(/<\//g, '<\\/')
+        .replace(/'/g, '\\u0027');
 }
 
-export function getWebviewContent(stats: ProjectStats, root: string, growth: Growth, theme: ThemeDef, config: DashboardConfig): string {
+export function getWebviewContent(stats: ProjectStats, root: string, growth: Growth, theme: ThemeDef, config: DashboardConfig, staleDays?: number): string {
     const { codeStats, mediaStats, complexity, codeTopFiles, totalEdits, lastModified, dailySaves, mostEditedFiles, staleFiles, gitInfo, commitActivityData, dependencies, health, performance } = stats;
 
     const langTotal = codeStats.totalLines || 1;
