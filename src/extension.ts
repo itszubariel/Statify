@@ -82,7 +82,10 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     context.subscriptions.push(
-        vscode.workspace.onDidChangeTextDocument(() => refreshAll()),
+        vscode.workspace.onDidChangeTextDocument(() => {
+            clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(() => refreshAll(), 500);
+        }),
         vscode.workspace.onDidCreateFiles(() => refreshAll()),
         vscode.workspace.onDidDeleteFiles(() => refreshAll()),
         vscode.workspace.onDidChangeWorkspaceFolders(() => { panels.clear(); treeProvider.refresh(); }),
