@@ -81,9 +81,6 @@ export class StatifyTreeDataProvider implements vscode.TreeDataProvider<StatifyT
             return items;
         }
 
-        const totalCodeFiles = Object.values(stats.codeStats.languages).reduce((a, b) => a + b, 0);
-        const todoTotal = stats.codeStats.todos.reduce((a, b) => a + b.count, 0);
-
         items.push(new StatifyTreeItem(
             `Overview`, '',
             vscode.TreeItemCollapsibleState.Collapsed,
@@ -110,7 +107,7 @@ export class StatifyTreeDataProvider implements vscode.TreeDataProvider<StatifyT
         ));
         if (stats.gitInfo.isRepo) {
             items.push(new StatifyTreeItem(
-                `Git`, `⎇ ${stats.gitInfo.branch}`,
+                `Git`, `\u2387 ${stats.gitInfo.branch}`,
                 vscode.TreeItemCollapsibleState.Collapsed,
                 undefined,
                 new vscode.ThemeIcon('git-branch'),
@@ -127,7 +124,6 @@ export class StatifyTreeDataProvider implements vscode.TreeDataProvider<StatifyT
         const totalCodeFiles = Object.values(stats.codeStats.languages).reduce((a, b) => a + b, 0);
         const todoTotal = stats.codeStats.todos.reduce((a, b) => a + b.count, 0);
         const sizeMb = (stats.mediaStats.totalSize / (1024 * 1024)).toFixed(1);
-        const langTotal = stats.codeStats.totalLines || 1;
 
         switch (element.label) {
             case 'Overview': {
@@ -148,25 +144,25 @@ export class StatifyTreeDataProvider implements vscode.TreeDataProvider<StatifyT
                     const pct = (l.count / totalCodeFiles * 100).toFixed(0);
                     return new StatifyTreeItem(
                         l.lang.toUpperCase(),
-                        `${l.count} files (${pct}%) · ${l.lines.toLocaleString()} lines`,
+                        `${l.count} files (${pct}%) \u00B7 ${l.lines.toLocaleString()} lines`,
                         vscode.TreeItemCollapsibleState.None,
                     );
                 });
             }
             case 'Top Folders': {
                 const folderEntries = Object.entries(stats.codeStats.folders)
-                    .map(([folder, files]) => ({ folder, files: files as number, lines: stats.codeStats.folderLines[folder] || 0 }))
+                    .map(([folder, files]) => ({ folder, files, lines: stats.codeStats.folderLines[folder] || 0 }))
                     .filter(f => f.files > 0)
                     .sort((a, b) => b.files - a.files)
                     .slice(0, 6);
                 return folderEntries.map(f => {
                     const name = f.folder === '.' ? '(root)' : f.folder;
-                    return new StatifyTreeItem(name, `${f.files} files · ${f.lines.toLocaleString()} lines`, vscode.TreeItemCollapsibleState.None);
+                    return new StatifyTreeItem(name, `${f.files} files \u00B7 ${f.lines.toLocaleString()} lines`, vscode.TreeItemCollapsibleState.None);
                 });
             }
             case 'Health': {
                 return stats.health.factors.map(f => {
-                    const color = f.color === 'green' ? '●' : f.color === 'yellow' ? '●' : '●';
+                    const color = f.color === 'green' ? '\u25CF' : f.color === 'yellow' ? '\u25CF' : '\u25CF';
                     return new StatifyTreeItem(
                         `${color} ${f.label}`,
                         `${f.score}/${f.max}`,
@@ -176,7 +172,7 @@ export class StatifyTreeDataProvider implements vscode.TreeDataProvider<StatifyT
             }
             case 'Git': {
                 const items: StatifyTreeItem[] = [
-                    new StatifyTreeItem('Branch', `⎇ ${stats.gitInfo.branch}`, vscode.TreeItemCollapsibleState.None, undefined, new vscode.ThemeIcon('git-branch')),
+                    new StatifyTreeItem('Branch', `\u2387 ${stats.gitInfo.branch}`, vscode.TreeItemCollapsibleState.None, undefined, new vscode.ThemeIcon('git-branch')),
                     new StatifyTreeItem('Last Commit', `"${stats.gitInfo.lastCommit.message}"`, vscode.TreeItemCollapsibleState.None),
                     new StatifyTreeItem('Commits This Week', String(stats.gitInfo.commitsThisWeek), vscode.TreeItemCollapsibleState.None, undefined, new vscode.ThemeIcon('git-commit')),
                     new StatifyTreeItem('Contributors', String(stats.gitInfo.contributors.length), vscode.TreeItemCollapsibleState.None, undefined, new vscode.ThemeIcon('organization')),

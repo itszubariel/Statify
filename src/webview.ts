@@ -20,73 +20,19 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
         percent: ((codeStats.langLines[l] || 0) / langTotal) * 100
     })).sort((a, b) => b.lines - a.lines);
 
-    const langColors: Record<string, string> = { 'ts': '#83a598', 'tsx': '#83a598', 'js': '#fabd2f', 'jsx': '#fabd2f', 'py': '#b8bb26', 'java': '#d79921', 'c': '#a89984', 'cpp': '#fb4934', 'cs': '#8ec07c', 'html': '#fe8019', 'css': '#d3869b', 'scss': '#d3869b', 'json': '#bdae93', 'md': '#83a598', 'go': '#8ec07c', 'rs': '#fe8019', 'rb': '#fb4934', 'php': '#d3869b', 'swift': '#fabd2f', 'kt': '#fe8019', 'other': '#928374' };
 
-    const langIcons: Record<string, string> = {
-        'ts': `<svg viewBox="0 0 24 24" fill="#3178c6"><rect width="24" height="24" rx="3" fill="#3178c6"/><path d="M3 3h18v18H3z" fill="none"/><path d="M13.5 13.5v1.25c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25V13.5M10 10h4M12 10v6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
-        'tsx': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#3178c6"/><path d="M13.5 13.5v1.25c0 .69.56 1.25 1.25 1.25s1.25-.56 1.25-1.25V13.5M10 10h4M12 10v6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
-        'js': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#f7df1e"/><path d="M14 16.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V11M9 11v3.5c0 1.38-1 2.5-2.5 2.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
-        'jsx': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#f7df1e"/><path d="M14 16.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V11M9 11v3.5c0 1.38-1 2.5-2.5 2.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
-        'py': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#3572A5"/><path d="M8 8h4a2 2 0 0 1 2 2v1H8a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2zm0 0V6m8 10H12a2 2 0 0 1-2-2v-1h4a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2zm0 0v2" stroke="#fff" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>`,
-        'rs': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ce422b"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Rs</text></svg>`,
-        'go': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#00add8"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Go</text></svg>`,
-        'java': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#b07219"/><text x="4" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Jv</text></svg>`,
-        'kt': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#7F52FF"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Kt</text></svg>`,
-        'cs': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#178600"/><text x="4" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">C#</text></svg>`,
-        'cpp': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#f34b7d"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">C++</text></svg>`,
-        'c': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#555555"/><text x="7" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">C</text></svg>`,
-        'html': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#e34c26"/><text x="3" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">HTML</text></svg>`,
-        'css': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#563d7c"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">CSS</text></svg>`,
-        'scss': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#c6538c"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">SCSS</text></svg>`,
-        'json': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#292929"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#cbcb41" font-family="monospace">JSON</text></svg>`,
-        'md': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#083fa1"/><text x="4" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">MD</text></svg>`,
-        'php': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#4F5D95"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">PHP</text></svg>`,
-        'rb': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#701516"/><text x="5" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">Rb</text></svg>`,
-        'swift': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#F05138"/><text x="3" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">Swift</text></svg>`,
-        'vue': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#41b883"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Vue</text></svg>`,
-        'svelte': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ff3e00"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">Svlt</text></svg>`,
-        'lua': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#000080"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Lua</text></svg>`,
-        'zig': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ec915c"/><text x="4" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">Zig</text></svg>`,
-        'nix': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#5277c3"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Nix</text></svg>`,
-        'sh': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#89e051"/><text x="5" y="17" font-size="12" font-weight="bold" fill="#000" font-family="monospace">sh</text></svg>`,
-        'yaml': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#cb171e"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">YAML</text></svg>`,
-        'toml': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#9c4221"/><text x="2" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">TOML</text></svg>`,
-        'xml': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#0060ac"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">XML</text></svg>`,
-        'sql': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#e38c00"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">SQL</text></svg>`,
-        'dart': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#00b4ab"/><text x="3" y="17" font-size="10" font-weight="bold" fill="#fff" font-family="monospace">Dart</text></svg>`,
-        'r': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#198ce7"/><text x="7" y="17" font-size="13" font-weight="bold" fill="#fff" font-family="monospace">R</text></svg>`,
-        'ex': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#6e4a7e"/><text x="5" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">Ex</text></svg>`,
-        'exs': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#6e4a7e"/><text x="3" y="17" font-size="11" font-weight="bold" fill="#fff" font-family="monospace">Exs</text></svg>`,
-        'gleam': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ffaff3"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#1a1a2e" font-family="monospace">Glm</text></svg>`,
-        'wgsl': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#005a9c"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">WGSL</text></svg>`,
-        'prisma': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#0c344b"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">Prm</text></svg>`,
-        'tf': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#5c4ee5"/><text x="5" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">TF</text></svg>`,
-        'proto': `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#4285f4"/><text x="2" y="17" font-size="9" font-weight="bold" fill="#fff" font-family="monospace">PB</text></svg>`,
-    };
-
-    function getLangIcon(lang: string): string {
-        if (langIcons[lang]) { return langIcons[lang]; }
-        const label = lang.slice(0, 2).toUpperCase();
-        const color = getLangColor(lang);
-        return `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="${color}"/><text x="${label.length === 1 ? 8 : 4}" y="17" font-size="12" font-weight="bold" fill="#fff" font-family="monospace">${label}</text></svg>`;
-    }
-    function getLangColor(lang: string): string {
-        const accents = ['#fabd2f', '#b8bb26', '#83a598', '#fe8019', '#d3869b', '#8ec07c', '#fb4934'];
-        let hash = 0; for (let i = 0; i < lang.length; i++) { hash = lang.charCodeAt(i) + ((hash << 5) - hash); }
-        return accents[Math.abs(hash) % accents.length];
-    }
 
     const topLangs = langStats.slice(0, 5);
     const otherLangs = langStats.slice(5);
     function langBarHTML(l: { lang: string; lines: number; percent: number }): string {
-        const color = langColors[l.lang] || getLangColor(l.lang);
+        const color = getLangColor(l.lang);
         const icon = getLangIcon(l.lang);
         return `<div class="lang-item"><div class="lang-info"><span class="lang-icon">${icon}</span><span class="lang-name">${l.lang.toUpperCase()}</span><span class="lang-lines">${l.lines.toLocaleString()} lines</span><span class="lang-percent">${l.percent.toFixed(1)}%</span></div><div class="lang-bar-track"><div class="lang-bar" style="width:${l.percent}%;background:${color}"></div></div></div>`;
     }
     const langBarsHTML = topLangs.map(langBarHTML).join('') + (otherLangs.length ? `<div id="more-langs" style="display:none;">${otherLangs.map(langBarHTML).join('')}</div><button onclick="toggleLanguages()" id="lang-toggle" class="toggle-btn">＋ Show ${otherLangs.length} more languages</button>` : '');
 
     const folderEntries = Object.entries(codeStats.folders)
-        .map(([folder, files]) => ({ folder, files: files as number, lines: codeStats.folderLines[folder] || 0 }))
+        .map(([folder, files]) => ({ folder, files, lines: codeStats.folderLines[folder] || 0 }))
         .filter(f => f.files > 0)
         .sort((a, b) => b.files - a.files).slice(0, 8);
     const maxFolderFiles = folderEntries[0]?.files || 1;
@@ -102,12 +48,12 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
 
     const recentActivityHTML = mostEditedFiles.map(f => {
         const fp = path.join(root, f.path).replace(/\\/g, '\\\\');
-        return `<div class="list-item" onclick="openFile('${fp}',0)"><span class="list-icon">◈</span><span class="file-name">${f.path}</span><span class="file-tag">${f.lastModified}</span></div>`;
+        return `<div class="list-item" data-path="${pathDataAttr(fp)}" onclick="openFile(this.dataset.path,0)"><span class="list-icon">◈</span><span class="file-name">${f.path}</span><span class="file-tag">${f.lastModified}</span></div>`;
     }).join('') || '<div class="empty-state">No recent edits found</div>';
 
     const topFilesHTML = codeTopFiles.map(f => {
         const fp = path.join(root, f.path).replace(/\\/g, '\\\\');
-        return `<div class="list-item" onclick="openFile('${fp}',0)"><span class="list-icon">◉</span><span class="file-name">${f.path}</span><span class="file-tag">${(f.size / 1024).toFixed(1)} KB</span></div>`;
+        return `<div class="list-item" data-path="${pathDataAttr(fp)}" onclick="openFile(this.dataset.path,0)"><span class="list-icon">◉</span><span class="file-name">${f.path}</span><span class="file-tag">${(f.size / 1024).toFixed(1)} KB</span></div>`;
     }).join('');
 
     const mediaFilesHTML = mediaStats.topFiles.map(f =>
@@ -117,13 +63,12 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
     const staleFilesHTML = staleFiles.map(f => {
         const fp = path.join(root, f.path).replace(/\\/g, '\\\\');
         const years = f.daysSince >= 365 ? `${Math.round(f.daysSince / 365)}y` : `${f.daysSince}d`;
-        return `<div class="list-item" onclick="openFile('${fp}',0)"><span class="list-icon" style="color:var(--orange)">⊘</span><span class="file-name">${f.path}</span><span class="file-tag" style="color:var(--orange)">${years} ago</span></div>`;
+        return `<div class="list-item" data-path="${pathDataAttr(fp)}" onclick="openFile(this.dataset.path,0)"><span class="list-icon" style="color:var(--orange)">⊘</span><span class="file-name">${f.path}</span><span class="file-tag" style="color:var(--orange)">${years} ago</span></div>`;
     }).join('') || '<div class="empty-state">No stale files — nice!</div>';
 
     const complexityFilesHTML = complexity.topFiles.map(f => {
         const fp = path.join(root, f.path).replace(/\\/g, '\\\\');
-        const compScore = f.functions + f.classes;
-        return `<div class="list-item" onclick="openFile('${fp}',0)"><span class="list-icon" style="color:var(--orange)">⚙</span><span class="file-name">${f.path}</span><span class="file-tag">${f.functions} fn · ${f.classes} cls</span></div>`;
+        return `<div class="list-item" data-path="${pathDataAttr(fp)}" onclick="openFile(this.dataset.path,0)"><span class="list-icon" style="color:var(--orange)">⚙</span><span class="file-name">${f.path}</span><span class="file-tag">${f.functions} fn · ${f.classes} cls</span></div>`;
     }).join('') || '<div class="empty-state">No analyzable files</div>';
 
     const contributorsHTML = gitInfo.contributors.map((c, i) => {
@@ -137,7 +82,7 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
 
     const changedFilesHTML = gitInfo.mostChangedFiles.map(f => {
         const fp = path.join(root, f.path).replace(/\\/g, '\\\\');
-        return `<div class="list-item" onclick="openFile('${fp}',0)"><span class="list-icon" style="color:var(--red)">△</span><span class="file-name">${f.path}</span><span class="file-tag">${f.changes}×</span></div>`;
+        return `<div class="list-item" data-path="${pathDataAttr(fp)}" onclick="openFile(this.dataset.path,0)"><span class="list-icon" style="color:var(--red)">△</span><span class="file-name">${f.path}</span><span class="file-tag">${f.changes}×</span></div>`;
     }).join('') || '<div class="empty-state">No git history</div>';
 
     const healthColor = health.score >= 85 ? 'var(--green)' : health.score >= 70 ? 'var(--yellow)' : health.score >= 55 ? 'var(--orange)' : 'var(--red)';
@@ -152,10 +97,15 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
     const todoTotal = codeStats.todos.reduce((a, b) => a + b.count, 0);
     const deltaClass = growth.linesDelta > 0 ? 'pos' : growth.linesDelta < 0 ? 'neg' : 'neu';
 
-    const groups = [...new Set(THEMES.map(t => t.group))];
+    function pathDataAttr(fp: string): string {
+        return fp.replace(/\\/g, '/').replace(/'/g, '%27');
+    }
+
+    const allThemes = THEMES();
+    const groups = [...new Set(allThemes.map(t => t.group))];
     const themePickerHTML = groups.map(group => `
         <div class="theme-group-label">${group}</div>
-        <div class="theme-group">${THEMES.filter(t => t.group === group).map(t => `
+        <div class="theme-group">${allThemes.filter(t => t.group === group).map(t => `
             <div class="theme-item ${t.id === theme.id ? 'active' : ''}" data-theme-id="${t.id}" onclick="previewTheme('${t.id}')">
                 <div class="theme-swatch-row">
                     <span class="swatch" style="background:${t.vars.bg0Hard}"></span>
@@ -169,7 +119,7 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
             </div>`).join('')}
         </div>`).join('');
 
-    const themePreviewMap = Object.fromEntries(THEMES.map(t => [t.id, { bg0Hard: t.vars.bg0Hard, bg0: t.vars.bg0, bg1: t.vars.bg1, bg2: t.vars.bg2, fg1: t.vars.fg1, fg4: t.vars.fg4, yellow: t.vars.yellow, green: t.vars.green, blue: t.vars.blue, purple: t.vars.purple, orange: t.vars.orange }]));
+    const themePreviewMap = Object.fromEntries(allThemes.map(t => [t.id, { bg0Hard: t.vars.bg0Hard, bg0: t.vars.bg0, bg1: t.vars.bg1, bg2: t.vars.bg2, fg1: t.vars.fg1, fg4: t.vars.fg4, yellow: t.vars.yellow, green: t.vars.green, blue: t.vars.blue, purple: t.vars.purple, orange: t.vars.orange }]));
 
     const exportData = {
         exportedAt: new Date().toISOString(),
@@ -196,6 +146,7 @@ export function getWebviewContent(stats: ProjectStats, root: string, growth: Gro
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
 <title>Statify</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Recursive:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -243,8 +194,8 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 .streak-label{font-size:0.65rem;color:var(--fg4);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-top:3px}
 .lang-item,.folder-item{margin-bottom:12px}
 .lang-info,.folder-info{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-family:'JetBrains Mono',monospace;font-size:0.75rem}
-.lang-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.lang-icon svg{width:18px;height:18px;border-radius:3px}
+.lang-icon{width:20px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.lang-badge{font-size:0.55rem;font-weight:700;color:#fff;padding:1px 3px;border-radius:3px;line-height:1.3;font-family:'JetBrains Mono',monospace;letter-spacing:-0.3px}
 .lang-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 .lang-name,.folder-name{flex:1;font-weight:600;color:var(--fg2)}
 .folder-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
@@ -419,7 +370,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 </div>
 
 <div class="grid">
-    <div class="card accent-yellow"${showCard('showOverview')}>
+    <div class="card accent-yellow"${showCard('showOverview')} data-card="showOverview">
         <div class="card-title"><span class="card-title-dot" style="background:var(--yellow)"></span>Overview</div>
         <div class="stat-grid">
             <div class="stat-item"><div class="stat-label">Code Files</div><div class="stat-value">${totalCodeFiles.toLocaleString()}</div></div>
@@ -428,7 +379,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
             <div class="stat-item"><div class="stat-label">File Edits</div><div class="stat-value purple">${totalEdits.toLocaleString()}</div></div>
         </div>
     </div>
-    <div class="card accent-blue"${showCard('showSaveStreak')}>
+    <div class="card accent-blue"${showCard('showSaveStreak')} data-card="showSaveStreak">
         <div class="card-title"><span class="card-title-dot" style="background:var(--blue)"></span>Save Streak</div>
         <div class="streak-row">
             <div class="streak-cell"><span class="streak-num">${saveStreaks.current}</span><span class="streak-label">Current</span></div>
@@ -436,7 +387,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
             <div class="streak-cell"><span class="streak-num">${dailySaves.length}</span><span class="streak-label">Active Days</span></div>
         </div>
     </div>
-    <div class="card accent-aqua"${showCard('showCommitStreak')}>
+    <div class="card accent-aqua"${showCard('showCommitStreak')} data-card="showCommitStreak">
         <div class="card-title"><span class="card-title-dot" style="background:var(--aqua)"></span>Commit Streak</div>
         <div class="streak-row">
             <div class="streak-cell"><span class="streak-num">${commitStreaks.current}</span><span class="streak-label">Current</span></div>
@@ -447,7 +398,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 </div>
 
 <div class="grid-2">
-    <div class="card accent-green"${showCard('showHealth')}>
+    <div class="card accent-green"${showCard('showHealth')} data-card="showHealth">
         <div class="card-title"><span class="card-title-dot" style="background:var(--green)"></span>Project Health</div>
         <div class="health-score-display">
             <div class="health-circle" style="border-color:${healthColor};color:${healthColor}">
@@ -462,7 +413,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
         </div>
         ${healthFactorsHTML}
     </div>
-    <div class="card accent-orange"${showCard('showGrowth')}>
+    <div class="card accent-orange"${showCard('showGrowth')} data-card="showGrowth">
         <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Project Growth</div>
         <div style="display:flex;gap:20px;margin-bottom:16px;">
             <div class="stat-item">
@@ -480,7 +431,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
     </div>
 </div>
 
-<div class="card grid-full accent-green"${showCard('showActivity')}>
+<div class="card grid-full accent-green"${showCard('showActivity')} data-card="showActivity">
     <div class="card-title"><span class="card-title-dot" style="background:var(--green)"></span>Activity — Last ${weeksToShow} Weeks</div>
     <div style="display:flex;gap:36px;flex-wrap:wrap;">
         <div class="heatmap-section" style="flex:1;min-width:220px;"><div class="heatmap-label">File Saves</div>${generateHeatmap(dailySaves, weeksToShow)}</div>
@@ -489,32 +440,32 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 </div>
 
 <div class="grid-2">
-    <div class="card accent-purple"${showCard('showLanguages')}>
+    <div class="card accent-purple"${showCard('showLanguages')} data-card="showLanguages">
         <div class="card-title"><span class="card-title-dot" style="background:var(--purple)"></span>Languages</div>
         ${langBarsHTML}
     </div>
-    <div class="card accent-blue"${showCard('showFolders')}>
+    <div class="card accent-blue"${showCard('showFolders')} data-card="showFolders">
         <div class="card-title"><span class="card-title-dot" style="background:var(--blue)"></span>Folder Breakdown</div>
         ${folderBarsHTML}
     </div>
 </div>
 
 <div class="grid">
-    <div class="card accent-yellow"${showCard('showRecentlyEdited')}>
+    <div class="card accent-yellow"${showCard('showRecentlyEdited')} data-card="showRecentlyEdited">
         <div class="card-title"><span class="card-title-dot" style="background:var(--yellow)"></span>Recently Edited</div>
         <div class="list-container" id="recentList">
             ${recentActivityHTML}
             <div class="no-results" id="recentEmpty">No matches</div>
         </div>
     </div>
-    <div class="card accent-blue"${showCard('showLargestFiles')}>
+    <div class="card accent-blue"${showCard('showLargestFiles')} data-card="showLargestFiles">
         <div class="card-title"><span class="card-title-dot" style="background:var(--blue)"></span>Largest Files</div>
         <div class="list-container" id="largestList">
             ${topFilesHTML}
             <div class="no-results" id="largestEmpty">No matches</div>
         </div>
     </div>
-    <div class="card accent-purple"${showCard('showMediaAssets')}>
+    <div class="card accent-purple"${showCard('showMediaAssets')} data-card="showMediaAssets">
         <div class="card-title"><span class="card-title-dot" style="background:var(--purple)"></span>Media Assets</div>
         <div style="margin-bottom:12px;"><div class="stat-label">Total Size</div><div class="stat-value" style="font-size:1.3rem;color:var(--purple);">${(mediaStats.totalSize / 1024 / 1024).toFixed(2)} MB</div></div>
         <div class="list-container" id="mediaList">
@@ -525,15 +476,15 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 </div>
 
 <div class="grid">
-    <div class="card accent-orange"${showCard('showStaleFiles')}>
-        <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Stale Files <span style="font-size:0.6rem;color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0">&nbsp;· untouched 6+ months</span></div>
+    <div class="card accent-orange"${showCard('showStaleFiles')} data-card="showStaleFiles">
+        <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Stale Files <span style="font-size:0.6rem;color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0">&nbsp;· untouched ${Math.round((staleDays ?? 180) / 30)}+ months</span></div>
         <div class="list-container">${staleFilesHTML}</div>
     </div>
-    <div class="card accent-aqua"${showCard('showContributors')}>
+    <div class="card accent-aqua"${showCard('showContributors')} data-card="showContributors">
         <div class="card-title"><span class="card-title-dot" style="background:var(--aqua)"></span>Top Contributors</div>
         <div class="list-container">${gitInfo.isRepo ? contributorsHTML : '<div class="empty-state">No git repository found</div>'}</div>
     </div>
-    <div class="card accent-red"${showCard('showChangedFiles')}>
+    <div class="card accent-red"${showCard('showChangedFiles')} data-card="showChangedFiles">
         <div class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>Most Changed Files</div>
         <div class="list-container" id="changedList">
             ${gitInfo.isRepo ? changedFilesHTML : '<div class="empty-state">No git repository found</div>'}
@@ -543,21 +494,21 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 </div>
 
 <div class="grid">
-    <div class="card accent-orange"${showCard('showComplexity')}>
+    <div class="card accent-orange"${showCard('showComplexity')} data-card="showComplexity">
         <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Complexity <span style="font-size:0.6rem;color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0">&nbsp;· ${complexity.totalFunctions} fn · ${complexity.totalClasses} cls</span></div>
         <div class="list-container" id="complexityList">
             ${complexityFilesHTML}
             <div class="no-results" id="complexityEmpty">No matches</div>
         </div>
     </div>
-    <div class="card accent-aqua"${showCard('showGit')}>
+    <div class="card accent-aqua"${showCard('showGit')} data-card="showGit">
         <div class="card-title"><span class="card-title-dot" style="background:var(--aqua)"></span>Git Repository</div>
         ${gitInfo.isRepo ? `<div class="git-branch">⎇ ${gitInfo.branch}</div>
         <div class="git-commit-msg">"${gitInfo.lastCommit.message}"</div>
         <div class="git-commit-time">${gitInfo.lastCommit.time}</div>
         <div class="git-week"><span class="git-week-num">${gitInfo.commitsThisWeek}</span><span class="git-week-label">commits this week</span></div>` : '<div class="empty-state">No git repository found</div>'}
     </div>
-    <div class="card accent-red"${showCard('showDependencies')}>
+    <div class="card accent-red"${showCard('showDependencies')} data-card="showDependencies">
         <div class="card-title"><span class="card-title-dot" style="background:var(--red)"></span>Dependencies</div>
         ${dependencies.total > 0 ? `<div style="margin-bottom:14px;"><div class="stat-label">Total</div><div class="stat-value red" style="font-size:1.6rem;">${dependencies.total}</div>${dependencies.dev > 0 ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--fg4);margin-top:4px;">${dependencies.dev} dev deps</div>` : ''}</div>
         ${dependencies.sources.map(src => `<div class="dep-row"><span class="dep-name">${src.name}</span><span class="dep-count">${src.count}</span></div>`).join('')}` : '<div class="empty-state">No dependencies found</div>'}
@@ -565,7 +516,7 @@ body{font-family:'Recursive','JetBrains Mono',monospace;background:var(--bg0-har
 </div>
 
 <div class="grid">
-    <div class="card accent-orange"${showCard('showPerformance')}>
+    <div class="card accent-orange"${showCard('showPerformance')} data-card="showPerformance">
         <div class="card-title"><span class="card-title-dot" style="background:var(--orange)"></span>Performance</div>
         <div class="perf-row"><span class="perf-key">Scan time</span><span class="perf-val">${performance.scanTime}ms</span></div>
         <div class="perf-row"><span class="perf-key">Files scanned</span><span class="perf-val">${performance.filesScanned.toLocaleString()}</span></div>
@@ -603,6 +554,12 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
     renderPreview(CURRENT_THEME_ID);
+    window.addEventListener('message', event => {
+        const msg = event.data;
+        if (msg.command === 'refresh') {
+            vscodeApi.postMessage({ command: 'refresh' });
+        }
+    });
 });
 
 function openFile(file, line) { vscodeApi.postMessage({ command: 'openFile', path: file, line: line }); }
@@ -656,10 +613,9 @@ function exportJSON() {
 
 function toggleCard(key, checked) {
     CARD_CONFIG[key] = checked;
-    const allCards = document.querySelectorAll('.card');
-    const idx = Object.keys(CARD_CONFIG).indexOf(key);
-    if (allCards[idx]) {
-        allCards[idx].style.display = checked ? '' : 'none';
+    const card = document.querySelector('.card[data-card="' + key + '"]');
+    if (card) {
+        card.style.display = checked ? '' : 'none';
     }
     vscodeApi.postMessage({ command: 'updateCardConfig', key, value: checked });
 }
